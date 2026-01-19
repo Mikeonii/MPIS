@@ -94,12 +94,11 @@ function LayoutContent({ children, currentPageName }) {
           {/* Logo */}
           <div className="p-6 border-b border-gray-200/20">
             <div className="flex items-center gap-3">
-              <div 
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg"
-                style={{ background: `linear-gradient(135deg, ${currentTheme.primary}, ${currentTheme.accent})` }}
-              >
-                M
-              </div>
+              <img 
+                src="https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=200&h=200&fit=crop"
+                alt="Madrid Palamboon Logo"
+                className="w-10 h-10 rounded-xl object-cover"
+              />
               <div>
                 <h1 className={cn(
                   "font-semibold text-lg font-sf",
