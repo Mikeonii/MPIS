@@ -451,12 +451,22 @@ export default function AccountView() {
 
             {/* Assistance History */}
             <GlassCard className="p-6">
-              <h3 className={cn(
-                "text-lg font-semibold mb-4",
-                darkMode ? "text-white" : "text-gray-900"
-              )}>
-                Assistance History
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className={cn(
+                  "text-lg font-semibold",
+                  darkMode ? "text-white" : "text-gray-900"
+                )}>
+                  Assistance History
+                </h3>
+                {assistances.length > 0 && (
+                  <div className={cn(
+                    "px-4 py-2 rounded-xl font-semibold",
+                    darkMode ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-900"
+                  )}>
+                    Total: ₱{assistances.reduce((sum, a) => sum + (a.amount || 0), 0).toLocaleString()}
+                  </div>
+                )}
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
