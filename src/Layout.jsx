@@ -46,9 +46,8 @@ function LayoutContent({ children, currentPageName }) {
     { name: 'Settings', icon: Settings, label: t('settings') },
   ];
 
-  const handleLogout = async () => {
-    await base44.auth.logout();
-    window.location.href = '/';
+  const handleLogout = () => {
+    base44.auth.logout(window.location.origin);
   };
 
   return (

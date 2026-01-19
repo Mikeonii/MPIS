@@ -88,24 +88,11 @@ export default function Settings() {
 
     setIsChangingPassword(true);
     try {
-      const response = await fetch('/api/auth/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword
-        })
-      });
-
-      if (response.ok) {
-        toast.success('Password changed successfully!');
-        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || 'Failed to change password. Check your current password.');
-      }
+      await base44.auth.changePassword(passwordData.currentPassword, passwordData.newPassword);
+      toast.success('Password changed successfully!');
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error) {
-      toast.error('Failed to change password');
+      toast.error(error.message || 'Failed to change password. Check your current password.');
     }
     setIsChangingPassword(false);
   };
