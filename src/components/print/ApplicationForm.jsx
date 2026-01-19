@@ -35,197 +35,180 @@ export default function ApplicationForm({ account, familyMembers = [] }) {
   };
 
   return (
-    <div className="print-content bg-white text-black p-8 max-w-[8.5in] mx-auto" style={{ fontFamily: 'Times New Roman, serif' }}>
-      {/* Header */}
-      <div className="text-center mb-6">
-        <p className="text-sm">Republic of the Philippines</p>
-        <p className="text-sm">Province of Surigao del Sur</p>
-        <p className="text-sm font-semibold">MUNICIPALITY OF MADRID</p>
-        <p className="text-sm">Municipal Social Welfare and Development Office</p>
-        <h1 className="text-xl font-bold mt-4 uppercase">APPLICATION FORM</h1>
-        <p className="text-sm italic">(Assistance to Individuals in Crisis Situation - AICS)</p>
-      </div>
-
-      {/* Date and Control No */}
-      <div className="flex justify-between mb-6 text-sm">
-        <div>
-          <span className="font-semibold">Control No.:</span> ________________
-        </div>
-        <div>
-          <span className="font-semibold">Date:</span> {format(new Date(), 'MMMM d, yyyy')}
+    <div className="print-content bg-white text-black p-8 max-w-[8.5in] mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10pt' }}>
+      {/* Header with Logo */}
+      <div className="flex items-center gap-4 mb-4">
+        <img 
+          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/696dc38131ba35d0783e445b/2d46c5743_image.png"
+          alt="Madrid Seal"
+          className="w-20 h-20 rounded-full object-cover flex-shrink-0"
+        />
+        <div className="text-left flex-1">
+          <p className="text-xs">Republic of the Philippines</p>
+          <p className="text-xs">Province of Surigao del Sur</p>
+          <p className="text-xs font-bold">MUNICIPALITY OF MADRID</p>
         </div>
       </div>
 
-      {/* Representative Section */}
-      <div className="mb-6 border border-black p-4">
-        <h2 className="text-sm font-bold mb-3 uppercase">REPRESENTATIVE INFORMATION</h2>
-        <div className="grid grid-cols-2 gap-y-2 text-sm">
-          <div className="col-span-2">
-            <span className="font-semibold">Name:</span>{' '}
-            {account.representative_same_as_holder ? getFullName(account) : getFullName(account, 'rep_')}
-          </div>
-          <div className="col-span-2">
-            <span className="font-semibold">Address:</span>{' '}
-            {account.representative_same_as_holder ? getFullAddress(account) : getFullAddress(account, 'rep_')}
-          </div>
-          <div>
-            <span className="font-semibold">Birthdate:</span>{' '}
-            {account.representative_same_as_holder 
-              ? (account.birthdate ? format(new Date(account.birthdate), 'MMMM d, yyyy') : '')
-              : (account.rep_birthdate ? format(new Date(account.rep_birthdate), 'MMMM d, yyyy') : '')
-            }
-          </div>
-          <div>
-            <span className="font-semibold">Age:</span>{' '}
-            {account.representative_same_as_holder 
-              ? calculateAge(account.birthdate)
-              : calculateAge(account.rep_birthdate)
-            }
-          </div>
-          <div>
-            <span className="font-semibold">Gender:</span>{' '}
-            {account.representative_same_as_holder ? account.gender : account.rep_gender}
-          </div>
-          <div>
-            <span className="font-semibold">Civil Status:</span>{' '}
-            {account.representative_same_as_holder ? account.civil_status : account.rep_civil_status}
-          </div>
-          <div>
-            <span className="font-semibold">Contact No.:</span>{' '}
-            {account.representative_same_as_holder ? account.mobile_number : account.rep_mobile_number}
-          </div>
-          <div>
-            <span className="font-semibold">Relationship to Client:</span>{' '}
-            {account.representative_same_as_holder ? 'Self' : account.rep_relationship}
-          </div>
-        </div>
+      {/* Title Section */}
+      <div className="text-center mb-3">
+        <h1 className="text-sm font-bold uppercase">Emergency Assistance Program</h1>
       </div>
 
-      {/* Client/Account Holder Section */}
-      <div className="mb-4">
-        <h2 className="text-sm font-bold mb-2 uppercase">CLIENT / BENEFICIARY AND FAMILY COMPOSITION</h2>
-        <table className="w-full text-sm border-collapse border border-black">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border border-black p-2 text-left">Complete Name</th>
-              <th className="border border-black p-2 text-left">Relationship</th>
-              <th className="border border-black p-2 text-center">Age</th>
-              <th className="border border-black p-2 text-left">Civil Status</th>
-              <th className="border border-black p-2 text-left">Occupation</th>
-              <th className="border border-black p-2 text-right">Monthly Income</th>
+      {/* Application Form Yellow Header */}
+      <div className="bg-yellow-400 text-center py-1 mb-2 border border-black">
+        <h2 className="text-xs font-bold uppercase">Application Form</h2>
+      </div>
+
+      {/* Classification Checkboxes */}
+      <table className="w-full text-xs border-collapse mb-2">
+        <tbody>
+          <tr>
+            <td className="border border-black p-1" style={{width: '33%'}}>
+              <label><input type="checkbox" className="mr-1" />Resettled</label><br/>
+              <label><input type="checkbox" className="mr-1" />Refugees</label><br/>
+              <label><input type="checkbox" className="mr-1" />ICS</label><br/>
+              <label><input type="checkbox" className="mr-1" />Evacuees</label><br/>
+              <label><input type="checkbox" className="mr-1" />Other (Specify)</label>
+            </td>
+            <td className="border border-black p-1" style={{width: '33%'}}>
+              <label><input type="checkbox" className="mr-1" />Not Resettled</label><br/>
+              <label><input type="checkbox" className="mr-1" />Cultural Communities</label><br/>
+              <label><input type="checkbox" className="mr-1" />Squatters</label><br/>
+              <label><input type="checkbox" className="mr-1" />Repatriat</label>
+            </td>
+            <td className="border border-black p-1" style={{width: '34%'}}>
+              <strong>Disaster Program</strong><br/>
+              <label><input type="checkbox" className="mr-1" />RD</label><br/>
+              <label><input type="checkbox" className="mr-1" />MD</label><br/>
+              <label><input type="checkbox" className="mr-1" />Returnees</label>
+            </td>
+          </tr>
+          <tr>
+            <td className="border border-black p-1" colSpan={2}>
+              <strong>NAME OF OCCURENCE:</strong>
+            </td>
+            <td className="border border-black p-1">
+              <strong>CONTROL NUMBER:</strong>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* Client Information */}
+      <table className="w-full text-xs border-collapse mb-2">
+        <tbody>
+          <tr>
+            <td className="border border-black p-1" style={{width: '50%'}}>
+              <strong>NAME OF CLIENT:</strong> {getFullName(account)}
+            </td>
+            <td className="border border-black p-1"><strong>Age:</strong> {calculateAge(account.birthdate)}</td>
+          </tr>
+          <tr>
+            <td className="border border-black p-1">
+              <strong>ADDRESS:</strong> {getFullAddress(account)}
+            </td>
+            <td className="border border-black p-1">
+              <strong>Birthday:</strong> {account.birthdate ? format(new Date(account.birthdate), 'MMM d, yyyy') : ''}
+            </td>
+          </tr>
+          <tr>
+            <td className="border border-black p-1"><strong>OCCUPATION:</strong> {account.occupation}</td>
+            <td className="border border-black p-1"><strong>Mo. Income:</strong> ₱{(account.monthly_income || 0).toLocaleString()}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* Dependents Table */}
+      <table className="w-full text-xs border-collapse mb-2">
+        <thead>
+          <tr className="border border-black">
+            <th className="border border-black p-1 text-left">DEPENDENTS</th>
+            <th className="border border-black p-1">AGE</th>
+            <th className="border border-black p-1">RELATION TO HEAD OF THE FAMILY</th>
+            <th className="border border-black p-1">OCCUPATION</th>
+            <th className="border border-black p-1">ADDRESS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {familyMembers.map((member, index) => (
+            <tr key={index} className="border border-black">
+              <td className="border border-black p-1">{member.complete_name}</td>
+              <td className="border border-black p-1 text-center">{member.age}</td>
+              <td className="border border-black p-1">{member.relationship}</td>
+              <td className="border border-black p-1">{member.occupation}</td>
+              <td className="border border-black p-1"></td>
             </tr>
-          </thead>
-          <tbody>
-            {/* Account Holder Row */}
-            <tr className="bg-blue-50">
-              <td className="border border-black p-2 font-semibold">{getFullName(account)}</td>
-              <td className="border border-black p-2">Client/Head</td>
-              <td className="border border-black p-2 text-center">{calculateAge(account.birthdate)}</td>
-              <td className="border border-black p-2">{account.civil_status}</td>
-              <td className="border border-black p-2">{account.occupation}</td>
-              <td className="border border-black p-2 text-right">₱{(account.monthly_income || 0).toLocaleString()}</td>
+          ))}
+          {[...Array(Math.max(0, 7 - familyMembers.length))].map((_, i) => (
+            <tr key={`empty-${i}`} className="border border-black">
+              <td className="border border-black p-1" style={{height: '20px'}}>&nbsp;</td>
+              <td className="border border-black p-1"></td>
+              <td className="border border-black p-1"></td>
+              <td className="border border-black p-1"></td>
+              <td className="border border-black p-1"></td>
             </tr>
-            {/* Family Members */}
-            {familyMembers.map((member, index) => (
-              <tr key={index}>
-                <td className="border border-black p-2">{member.complete_name}</td>
-                <td className="border border-black p-2">{member.relationship}</td>
-                <td className="border border-black p-2 text-center">{member.age}</td>
-                <td className="border border-black p-2">-</td>
-                <td className="border border-black p-2">{member.occupation || '-'}</td>
-                <td className="border border-black p-2 text-right">₱{(member.monthly_income || 0).toLocaleString()}</td>
-              </tr>
-            ))}
-            {/* Empty rows for manual entry */}
-            {[...Array(Math.max(0, 5 - familyMembers.length))].map((_, index) => (
-              <tr key={`empty-${index}`}>
-                <td className="border border-black p-2 h-8"></td>
-                <td className="border border-black p-2"></td>
-                <td className="border border-black p-2"></td>
-                <td className="border border-black p-2"></td>
-                <td className="border border-black p-2"></td>
-                <td className="border border-black p-2"></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
 
-      {/* Category Section */}
-      <div className="mb-6 text-sm">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <span className="font-semibold">Target Sector:</span> {account.target_sector}
-          </div>
-          <div>
-            <span className="font-semibold">Sub Category:</span> {account.sub_category === 'Others' ? account.sub_category_other : account.sub_category}
-          </div>
+      {/* House Owner/Renter Section */}
+      <table className="w-full text-xs border-collapse mb-2">
+        <tbody>
+          <tr>
+            <td className="border border-black p-1" style={{width: '25%'}}>
+              <label><input type="checkbox" className="mr-1" />House Owner</label>
+            </td>
+            <td className="border border-black p-1" style={{width: '25%'}}>
+              <strong>Estimated Damages</strong>
+            </td>
+            <td className="border border-black p-1" colSpan={2}></td>
+          </tr>
+          <tr>
+            <td className="border border-black p-1">
+              <label><input type="checkbox" className="mr-1" />Home Renter</label>
+            </td>
+            <td className="border border-black p-1">
+              <strong>Casualties/name</strong>
+            </td>
+            <td className="border border-black p-1" colSpan={2}></td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* Social Worker Section */}
+      <div className="border border-black p-4 mb-2" style={{minHeight: '80px'}}>
+        <div className="text-center mt-8">
+          <p className="text-xs font-bold">JUDY ANN P. CORREOS, RSW</p>
         </div>
       </div>
 
-      {/* Type of Assistance Section */}
-      <div className="mb-6 border border-black p-4">
-        <h2 className="text-sm font-bold mb-3 uppercase">TYPE OF ASSISTANCE REQUESTED</h2>
-        <div className="grid grid-cols-3 gap-2 text-sm">
-          <label className="flex items-center gap-2">
-            <span className="w-4 h-4 border border-black inline-block"></span>
-            Medical Assistance
-          </label>
-          <label className="flex items-center gap-2">
-            <span className="w-4 h-4 border border-black inline-block"></span>
-            Funeral Assistance
-          </label>
-          <label className="flex items-center gap-2">
-            <span className="w-4 h-4 border border-black inline-block"></span>
-            Cash Assistance
-          </label>
-        </div>
-        <div className="mt-4">
-          <span className="font-semibold">Amount Requested:</span> ₱ ________________
-        </div>
-      </div>
-
-      {/* Certification */}
-      <div className="mb-6 text-sm">
-        <p className="text-justify indent-8">
-          I hereby certify that all information provided above are true and correct to the best of my knowledge.
-          I understand that any false statement or misrepresentation may result in the denial of assistance and
-          possible legal action.
-        </p>
-      </div>
-
-      {/* Signatures */}
-      <div className="mt-8 grid grid-cols-2 gap-8">
-        <div className="text-center">
-          <div className="border-b border-black mb-1 pt-12"></div>
-          <p className="text-sm font-semibold">Applicant's Signature over Printed Name</p>
-          <p className="text-xs">Date: ________________</p>
-        </div>
-        <div className="text-center">
-          <div className="border-b border-black mb-1 pt-12"></div>
-          <p className="text-sm font-semibold">Representative's Signature over Printed Name</p>
-          <p className="text-xs">Date: ________________</p>
-        </div>
-      </div>
-
-      {/* Office Use Only */}
-      <div className="mt-8 border-t-2 border-black pt-4">
-        <h2 className="text-sm font-bold mb-3 uppercase">FOR OFFICE USE ONLY</h2>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <p><span className="font-semibold">Interviewed by:</span> _______________________</p>
-            <p className="mt-2"><span className="font-semibold">Position:</span> _______________________</p>
-          </div>
-          <div>
-            <p><span className="font-semibold">Approved Amount:</span> ₱ _______________</p>
-            <p className="mt-2"><span className="font-semibold">Date Approved:</span> _______________</p>
-          </div>
-        </div>
-        <div className="mt-4 text-center">
-          <div className="border-b border-black w-64 mx-auto mb-1 pt-8"></div>
-          <p className="text-sm font-semibold">MSWDO Head / Approving Officer</p>
-        </div>
-      </div>
+      {/* Signature Section */}
+      <table className="w-full text-xs border-collapse mb-2">
+        <tbody>
+          <tr>
+            <td className="border border-black p-2 text-center">
+              <strong>SIGNATURE/THUMBMARK OF CLIENT</strong>
+            </td>
+            <td className="border border-black p-2 text-center">
+              <strong>Name & Signature of Social Worker</strong>
+            </td>
+          </tr>
+          <tr>
+            <td className="border border-black p-1">
+              <strong>Date:</strong>
+            </td>
+            <td className="border border-black p-1">
+              <strong>Date:</strong>
+            </td>
+          </tr>
+          <tr>
+            <td className="border border-black p-2" colSpan={2}>
+              <strong>Remarks:</strong> Client is eligible for Medical assistance considering that client family monthly income falls below poverty threshold.
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 }
