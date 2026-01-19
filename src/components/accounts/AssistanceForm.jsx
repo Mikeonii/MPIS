@@ -60,6 +60,13 @@ export default function AssistanceForm({
         setUser(userData);
         const period = userData.assistance_period || 90;
         setAssistancePeriod(period);
+        
+        // Auto-fill interviewer info
+        setLocalAssistances(prev => prev.map(a => ({
+          ...a,
+          interviewed_by: userData.full_name || userData.email || '',
+          interviewed_by_position: userData.position || ''
+        })));
       } catch (e) {
         console.log('User not logged in');
       }
@@ -81,12 +88,9 @@ export default function AssistanceForm({
       
       const now = new Date();
       
-      // Get IDs of all family members + account holder
-      const familyMemberIds = [accountId, ...familyMembers.map(fm => fm.account_id)];
-      
-      // Check if any family member received assistance within the period
+      // Check assistance for this specific account
       const recentAssistance = allAssistances.find(assistance => {
-        if (!familyMemberIds.includes(assistance.account_id)) return false;
+        if (assistance.account_id !== accountId) return false;
         
         const assistanceDate = new Date(assistance.date_rendered || assistance.created_date);
         const daysSince = (now - assistanceDate) / (1000 * 60 * 60 * 24);
@@ -95,12 +99,13 @@ export default function AssistanceForm({
       });
 
       if (recentAssistance) {
-        setCanAddAssistance(false);
-        setLastAssistanceDate(new Date(recentAssistance.date_rendered || recentAssistance.created_date));
         const assistanceDate = new Date(recentAssistance.date_rendered || recentAssistance.created_date);
         const daysRemaining = Math.ceil(assistancePeriod - (now - assistanceDate) / (1000 * 60 * 60 * 24));
         
-        toast.error(`This family already received assistance within ${assistancePeriod} days. ${daysRemaining} days remaining before eligible again.`, {
+        setCanAddAssistance(false);
+        setLastAssistanceDate(assistanceDate);
+        
+        toast.warning(`This account already received assistance within ${assistancePeriod} days. ${daysRemaining} days remaining before eligible again.`, {
           duration: 5000,
         });
       } else {
@@ -117,7 +122,7 @@ export default function AssistanceForm({
       ...prev, 
       { 
         type_of_assistance: '', 
-        interviewed_by: user?.full_name || '', 
+        interviewed_by: user?.full_name || user?.email || '', 
         interviewed_by_position: user?.position || '',
         amount: '', 
         pharmacy_id: '',
@@ -128,7 +133,9 @@ export default function AssistanceForm({
   };
 
   const removeAssistance = (index) => {
-    setLocalAssistances(prev => prev.filter((_, i) => i !== index));
+    if (localAssistances.length > 1) {
+      setLocalAssistances(prev => prev.filter((_, i) => i !== index));
+    }
   };
 
   const updateAssistance = (index, field, value) => {
@@ -147,11 +154,14 @@ export default function AssistanceForm({
   };
 
   const handleSubmit = () => {
-    if (!canAddAssistance) {
-      toast.error('Cannot add assistance. Waiting period not met.');
+    const validAssistances = localAssistances.filter(a => a.type_of_assistance && a.amount);
+    
+    if (validAssistances.length === 0) {
+      toast.error('Please fill in at least one assistance entry');
       return;
     }
-    onSave(localAssistances.filter(a => a.type_of_assistance && a.amount));
+    
+    onSave(validAssistances);
   };
 
   const inputClasses = cn(
@@ -253,7 +263,7 @@ export default function AssistanceForm({
               <div>
                 <Label className={labelClasses}>{t('interviewedBy')}</Label>
                 <Input
-                  value={assistance.interviewed_by || user?.full_name || ''}
+                  value={assistance.interviewed_by}
                   onChange={(e) => updateAssistance(index, 'interviewed_by', e.target.value)}
                   className={inputClasses}
                 />
@@ -287,7 +297,6 @@ export default function AssistanceForm({
           type="button"
           variant="outline"
           onClick={addAssistance}
-          disabled={!canAddAssistance}
           className={cn(
             "w-full rounded-xl border-dashed",
             darkMode ? "border-gray-600 text-gray-300" : "border-gray-300 text-gray-600"
@@ -300,7 +309,7 @@ export default function AssistanceForm({
         <div className="flex justify-end mt-4">
           <Button
             onClick={handleSubmit}
-            disabled={isLoading || localAssistances.length === 0 || !canAddAssistance}
+            disabled={isLoading}
             className="rounded-xl px-6 text-white gap-2"
             style={{ backgroundColor: currentTheme.primary }}
           >
