@@ -32,20 +32,47 @@ import { format } from 'date-fns';
 export default function Dashboard() {
   const { darkMode, currentTheme } = useTheme();
   const { t } = useLanguage();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const userData = await base44.auth.me();
+        setUser(userData);
+      } catch (e) {
+        console.log('User not logged in');
+      }
+    };
+    loadUser();
+  }, []);
+
+  const isAdmin = user?.role === 'admin';
 
   const { data: accounts = [] } = useQuery({
-    queryKey: ['accounts'],
-    queryFn: () => base44.entities.Account.list(),
+    queryKey: ['accounts', user?.email],
+    queryFn: async () => {
+      const allAccounts = await base44.entities.Account.list();
+      return isAdmin ? allAccounts : allAccounts.filter(a => a.created_by === user?.email);
+    },
+    enabled: !!user,
   });
 
   const { data: assistances = [] } = useQuery({
-    queryKey: ['assistances'],
-    queryFn: () => base44.entities.Assistance.list('-created_date', 100),
+    queryKey: ['assistances', user?.email],
+    queryFn: async () => {
+      const allAssistances = await base44.entities.Assistance.list('-created_date', 100);
+      return isAdmin ? allAssistances : allAssistances.filter(a => a.created_by === user?.email);
+    },
+    enabled: !!user,
   });
 
   const { data: pharmacies = [] } = useQuery({
-    queryKey: ['pharmacies'],
-    queryFn: () => base44.entities.Pharmacy.list(),
+    queryKey: ['pharmacies', user?.email],
+    queryFn: async () => {
+      const allPharmacies = await base44.entities.Pharmacy.list();
+      return isAdmin ? allPharmacies : allPharmacies.filter(p => p.created_by === user?.email);
+    },
+    enabled: !!user,
   });
 
   // Calculate statistics

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -50,11 +50,30 @@ export default function Accounts() {
   const [filterSector, setFilterSector] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteId, setDeleteId] = useState(null);
+  const [user, setUser] = useState(null);
   const itemsPerPage = 10;
 
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const userData = await base44.auth.me();
+        setUser(userData);
+      } catch (e) {
+        console.log('User not logged in');
+      }
+    };
+    loadUser();
+  }, []);
+
+  const isAdmin = user?.role === 'admin';
+
   const { data: accounts = [], isLoading } = useQuery({
-    queryKey: ['accounts'],
-    queryFn: () => base44.entities.Account.list('-created_date'),
+    queryKey: ['accounts', user?.email],
+    queryFn: async () => {
+      const allAccounts = await base44.entities.Account.list('-created_date');
+      return isAdmin ? allAccounts : allAccounts.filter(a => a.created_by === user?.email);
+    },
+    enabled: !!user,
   });
 
   const deleteMutation = useMutation({
