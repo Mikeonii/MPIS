@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Save, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Save, AlertTriangle, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from '@/components/ui/alert-dialog';
 
 export default function AssistanceForm({ 
   accountId,
@@ -23,6 +24,8 @@ export default function AssistanceForm({
   const [assistancePeriod, setAssistancePeriod] = useState(90);
   const [canAddAssistance, setCanAddAssistance] = useState(true);
   const [lastAssistanceDate, setLastAssistanceDate] = useState(null);
+  const [ineligibilityReason, setIneligibilityReason] = useState(null);
+  const [showIneligibilityDialog, setShowIneligibilityDialog] = useState(false);
 
   const [localAssistances, setLocalAssistances] = useState([{ 
     type_of_assistance: '', 
@@ -85,12 +88,23 @@ export default function AssistanceForm({
 
     try {
       const allAssistances = await base44.entities.Assistance.list();
+      const allAccounts = await base44.entities.Account.list();
       
       const now = new Date();
       
-      // Check assistance for this specific account
+      // Get the account holder's last name to check family members
+      const currentAccount = allAccounts.find(a => a.id === accountId);
+      if (!currentAccount) return;
+      
+      // Find all accounts with the same last name (family members)
+      const familyAccounts = allAccounts.filter(a => 
+        a.last_name?.toLowerCase() === currentAccount.last_name?.toLowerCase()
+      );
+      const familyAccountIds = familyAccounts.map(a => a.id);
+      
+      // Check assistance for this account or any family member
       const recentAssistance = allAssistances.find(assistance => {
-        if (assistance.account_id !== accountId) return false;
+        if (!familyAccountIds.includes(assistance.account_id)) return false;
         
         const assistanceDate = new Date(assistance.date_rendered || assistance.created_date);
         const daysSince = (now - assistanceDate) / (1000 * 60 * 60 * 24);
@@ -102,15 +116,27 @@ export default function AssistanceForm({
         const assistanceDate = new Date(recentAssistance.date_rendered || recentAssistance.created_date);
         const daysRemaining = Math.ceil(assistancePeriod - (now - assistanceDate) / (1000 * 60 * 60 * 24));
         
+        // Find who received the assistance
+        const recipientAccount = allAccounts.find(a => a.id === recentAssistance.account_id);
+        const isCurrentAccount = recentAssistance.account_id === accountId;
+        
+        const recipientName = recipientAccount 
+          ? `${recipientAccount.first_name} ${recipientAccount.last_name}`
+          : 'Unknown';
+        
         setCanAddAssistance(false);
         setLastAssistanceDate(assistanceDate);
-        
-        toast.warning(`This account already received assistance within ${assistancePeriod} days. ${daysRemaining} days remaining before eligible again.`, {
-          duration: 5000,
+        setIneligibilityReason({
+          isCurrentAccount,
+          recipientName,
+          assistanceDate,
+          daysRemaining,
+          assistancePeriod
         });
       } else {
         setCanAddAssistance(true);
         setLastAssistanceDate(null);
+        setIneligibilityReason(null);
       }
     } catch (error) {
       console.error('Error checking eligibility:', error);
@@ -154,6 +180,11 @@ export default function AssistanceForm({
   };
 
   const handleSubmit = () => {
+    if (!canAddAssistance) {
+      setShowIneligibilityDialog(true);
+      return;
+    }
+    
     const validAssistances = localAssistances.filter(a => a.type_of_assistance && a.amount);
     
     if (validAssistances.length === 0) {
@@ -177,7 +208,69 @@ export default function AssistanceForm({
   );
 
   return (
-    <GlassCard className="p-6">
+    <>
+      {/* Ineligibility Dialog */}
+      <AlertDialog open={showIneligibilityDialog} onOpenChange={setShowIneligibilityDialog}>
+        <AlertDialogContent className={cn(darkMode ? "bg-gray-900 border-gray-800" : "bg-white")}>
+          <AlertDialogHeader>
+            <AlertDialogTitle className={cn(
+              "flex items-center gap-2",
+              darkMode ? "text-white" : "text-gray-900"
+            )}>
+              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              Not Eligible for Assistance
+            </AlertDialogTitle>
+            <AlertDialogDescription className={cn(
+              "space-y-2 text-base",
+              darkMode ? "text-gray-300" : "text-gray-600"
+            )}>
+              {ineligibilityReason && (
+                <>
+                  <p>
+                    {ineligibilityReason.isCurrentAccount ? (
+                      <>
+                        You are not eligible for a new assistance because you have received assistance on{' '}
+                        <strong className={darkMode ? "text-white" : "text-gray-900"}>
+                          {format(ineligibilityReason.assistanceDate, 'MMMM d, yyyy')}
+                        </strong>.
+                      </>
+                    ) : (
+                      <>
+                        You are not eligible for a new assistance because one of your family members (
+                        <strong className={darkMode ? "text-white" : "text-gray-900"}>
+                          {ineligibilityReason.recipientName}
+                        </strong>
+                        ) received assistance on{' '}
+                        <strong className={darkMode ? "text-white" : "text-gray-900"}>
+                          {format(ineligibilityReason.assistanceDate, 'MMMM d, yyyy')}
+                        </strong>.
+                      </>
+                    )}
+                  </p>
+                  <p className="font-medium">
+                    You will be eligible again in{' '}
+                    <strong className="text-orange-600 dark:text-orange-400">
+                      {ineligibilityReason.daysRemaining} day{ineligibilityReason.daysRemaining !== 1 ? 's' : ''}
+                    </strong>
+                    {' '}({ineligibilityReason.assistancePeriod}-day waiting period).
+                  </p>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={() => setShowIneligibilityDialog(false)}
+              className="text-white"
+              style={{ backgroundColor: currentTheme.primary }}
+            >
+              Understood
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <GlassCard className="p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className={cn(
           "text-lg font-semibold",
@@ -319,5 +412,6 @@ export default function AssistanceForm({
         </div>
       </div>
     </GlassCard>
+    </>
   );
 }
