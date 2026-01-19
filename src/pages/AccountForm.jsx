@@ -1,0 +1,139 @@
+import React, { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import { useTheme } from '@/components/ui/ThemeContext';
+import { useLanguage } from '@/components/ui/LanguageContext';
+import AccountFormComponent from '@/components/accounts/AccountForm';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
+
+export default function AccountFormPage() {
+  const { darkMode, currentTheme } = useTheme();
+  const { t } = useLanguage();
+  const queryClient = useQueryClient();
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const accountId = urlParams.get('id');
+  const isEditing = !!accountId;
+
+  const { data: account } = useQuery({
+    queryKey: ['account', accountId],
+    queryFn: () => base44.entities.Account.list().then(accounts => 
+      accounts.find(a => a.id === accountId)
+    ),
+    enabled: isEditing,
+  });
+
+  const { data: familyMembers = [] } = useQuery({
+    queryKey: ['familyMembers', accountId],
+    queryFn: () => base44.entities.FamilyMember.filter({ account_id: accountId }),
+    enabled: isEditing,
+  });
+
+  const createAccountMutation = useMutation({
+    mutationFn: (data) => base44.entities.Account.create(data),
+    onSuccess: (newAccount) => {
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      return newAccount;
+    },
+  });
+
+  const updateAccountMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Account.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['account', accountId] });
+    },
+  });
+
+  const createFamilyMemberMutation = useMutation({
+    mutationFn: (data) => base44.entities.FamilyMember.create(data),
+  });
+
+  const deleteFamilyMemberMutation = useMutation({
+    mutationFn: (id) => base44.entities.FamilyMember.delete(id),
+  });
+
+  const handleSave = async (accountData, familyMembersData) => {
+    try {
+      let savedAccountId = accountId;
+
+      if (isEditing) {
+        await updateAccountMutation.mutateAsync({ id: accountId, data: accountData });
+        
+        // Delete existing family members
+        for (const member of familyMembers) {
+          await deleteFamilyMemberMutation.mutateAsync(member.id);
+        }
+      } else {
+        const newAccount = await createAccountMutation.mutateAsync(accountData);
+        savedAccountId = newAccount.id;
+      }
+
+      // Create new family members
+      for (const member of familyMembersData) {
+        await createFamilyMemberMutation.mutateAsync({
+          ...member,
+          account_id: savedAccountId
+        });
+      }
+
+      toast.success(t('savedSuccessfully'));
+      window.location.href = createPageUrl(`AccountView?id=${savedAccountId}`);
+    } catch (error) {
+      console.error('Error saving account:', error);
+      toast.error('Failed to save account');
+    }
+  };
+
+  const handleCancel = () => {
+    window.history.back();
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleCancel}
+          className={cn(
+            "rounded-xl",
+            darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
+          )}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+        <div>
+          <h1 className={cn(
+            "text-3xl font-bold tracking-tight",
+            darkMode ? "text-white" : "text-gray-900"
+          )}>
+            {isEditing ? 'Edit Account' : t('newAccount')}
+          </h1>
+          <p className={cn(
+            "text-sm mt-1",
+            darkMode ? "text-gray-400" : "text-gray-500"
+          )}>
+            {isEditing ? 'Update account information' : 'Register a new account'}
+          </p>
+        </div>
+      </div>
+
+      {/* Form */}
+      <AccountFormComponent
+        account={account}
+        familyMembers={familyMembers}
+        onSave={handleSave}
+        onCancel={handleCancel}
+        isLoading={createAccountMutation.isPending || updateAccountMutation.isPending}
+      />
+    </div>
+  );
+}
