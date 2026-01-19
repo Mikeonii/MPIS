@@ -10,13 +10,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 
-const BARANGAYS = [
-  "Bayogo", "Beto", "Calabcab", "Calagdaan", "Consuelo", "Coring", 
-  "Cortes", "Diaz", "Don Paulino", "Doyos", "Dubdub", "Embarcadero", 
-  "Gacub", "Gamuton", "Ibarra", "Linibonan", "Kalaw", "Magsaysay", 
-  "Mahayahay", "Matin-ao", "Poblacion", "Sebo", "Silop", "Tagbongabong", "Unidad"
-];
-
 const TARGET_SECTORS = ["FHONA", "WEDC", "YOUTH", "PWD", "SC", "PLHIV", "CHILD"];
 
 const SUB_CATEGORIES = [
@@ -43,6 +36,7 @@ export default function AccountForm({
   const [regions, setRegions] = useState([]);
   const [provinces, setProvinces] = useState([]);
   const [cities, setCities] = useState([]);
+  const [barangaysList, setBarangaysList] = useState([]);
   const [loadingLocations, setLoadingLocations] = useState(true);
 
   const [expandedSections, setExpandedSections] = useState({
@@ -63,6 +57,7 @@ export default function AccountForm({
     purok: '',
     barangay: '',
     city_municipality: 'Madrid',
+    city_municipality_code: '',
     district: '1st District',
     province: '168500000',
     region: '160000000',
@@ -82,6 +77,7 @@ export default function AccountForm({
     rep_purok: '',
     rep_barangay: '',
     rep_city_municipality: 'Madrid',
+    rep_city_municipality_code: '',
     rep_district: '1st District',
     rep_province: '168500000',
     rep_region: '160000000',
@@ -121,6 +117,12 @@ export default function AccountForm({
   }, [formData.province]);
 
   useEffect(() => {
+    if (formData.city_municipality_code) {
+      fetchBarangays(formData.city_municipality_code);
+    }
+  }, [formData.city_municipality_code]);
+
+  useEffect(() => {
     if (formData.representative_same_as_holder) {
       setFormData(prev => ({
         ...prev,
@@ -133,6 +135,7 @@ export default function AccountForm({
         rep_purok: prev.purok,
         rep_barangay: prev.barangay,
         rep_city_municipality: prev.city_municipality,
+        rep_city_municipality_code: prev.city_municipality_code,
         rep_district: prev.district,
         rep_province: prev.province,
         rep_region: prev.region,
@@ -181,6 +184,25 @@ export default function AccountForm({
     } catch (error) {
       console.error('Error fetching cities:', error);
       setCities([{ name: 'Madrid' }]);
+    }
+  };
+
+  const fetchBarangays = async (cityCode) => {
+    try {
+      const response = await fetch(`https://psgc.gitlab.io/api/cities-municipalities/${cityCode}/barangays/`);
+      const data = await response.json();
+      setBarangaysList(data);
+    } catch (error) {
+      console.error('Error fetching barangays:', error);
+      setBarangaysList([
+        { name: "Bayogo" }, { name: "Beto" }, { name: "Calabcab" }, { name: "Calagdaan" }, 
+        { name: "Consuelo" }, { name: "Coring" }, { name: "Cortes" }, { name: "Diaz" }, 
+        { name: "Don Paulino" }, { name: "Doyos" }, { name: "Dubdub" }, { name: "Embarcadero" }, 
+        { name: "Gacub" }, { name: "Gamuton" }, { name: "Ibarra" }, { name: "Linibonan" }, 
+        { name: "Kalaw" }, { name: "Magsaysay" }, { name: "Mahayahay" }, { name: "Matin-ao" }, 
+        { name: "Poblacion" }, { name: "Sebo" }, { name: "Silop" }, { name: "Tagbongabong" }, 
+        { name: "Unidad" }
+      ]);
     }
   };
 
@@ -435,8 +457,8 @@ export default function AccountForm({
                     <SelectValue placeholder={`Select ${t('barangay')}`} />
                   </SelectTrigger>
                   <SelectContent>
-                    {BARANGAYS.map(brgy => (
-                      <SelectItem key={brgy} value={brgy}>{brgy}</SelectItem>
+                    {barangaysList.map((brgy, idx) => (
+                      <SelectItem key={brgy.code || idx} value={brgy.name}>{brgy.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -452,6 +474,7 @@ export default function AccountForm({
                     handleChange('region', value);
                     handleChange('province', '');
                     handleChange('city_municipality', '');
+                    handleChange('city_municipality_code', '');
                     handleChange('district', '');
                   }}
                 >
@@ -480,6 +503,7 @@ export default function AccountForm({
                   onValueChange={(value) => {
                     handleChange('province', value);
                     handleChange('city_municipality', '');
+                    handleChange('city_municipality_code', '');
                     handleChange('district', '');
                   }}
                   disabled={!formData.region}
@@ -500,7 +524,17 @@ export default function AccountForm({
                 <Label className={labelClasses}>{t('cityMunicipality')}</Label>
                 <Select
                   value={formData.city_municipality}
-                  onValueChange={(value) => handleChange('city_municipality', value)}
+                  onValueChange={(value) => {
+                    const selectedCity = cities.find(city => city.name === value);
+                    handleChange('city_municipality', value);
+                    handleChange('city_municipality_code', selectedCity ? selectedCity.code : '');
+                    
+                    if (value === 'Madrid') {
+                      handleChange('district', '1st District');
+                    } else {
+                      handleChange('district', '');
+                    }
+                  }}
                   disabled={!formData.province}
                 >
                   <SelectTrigger className={inputClasses}>
