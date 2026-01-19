@@ -14,7 +14,8 @@ import {
   Palette,
   User,
   Save,
-  Check
+  Check,
+  Lock
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -30,6 +31,12 @@ export default function Settings() {
     assistance_period: 90
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -62,6 +69,42 @@ export default function Settings() {
       toast.error('Failed to save profile');
     }
     setIsSaving(false);
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
+      });
+
+      if (response.ok) {
+        toast.success('Password changed successfully');
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        toast.error('Failed to change password. Check your current password.');
+      }
+    } catch (error) {
+      toast.error('Failed to change password');
+    }
+    setIsChangingPassword(false);
   };
 
   const inputClasses = cn(
@@ -411,6 +454,76 @@ export default function Settings() {
             )}
           </button>
         </div>
+      </GlassCard>
+
+      {/* Password Settings */}
+      <GlassCard className="p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div 
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: `${currentTheme.primary}20` }}
+          >
+            <Lock className="w-5 h-5" style={{ color: currentTheme.primary }} />
+          </div>
+          <div>
+            <h2 className={cn(
+              "text-lg font-semibold",
+              darkMode ? "text-white" : "text-gray-900"
+            )}>
+              Change Password
+            </h2>
+            <p className={cn(
+              "text-sm",
+              darkMode ? "text-gray-400" : "text-gray-500"
+            )}>
+              Update your account password
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleChangePassword} className="space-y-4">
+          <div>
+            <Label className={labelClasses}>Current Password</Label>
+            <Input
+              type="password"
+              value={passwordData.currentPassword}
+              onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+              className={inputClasses}
+              required
+            />
+          </div>
+          <div>
+            <Label className={labelClasses}>New Password</Label>
+            <Input
+              type="password"
+              value={passwordData.newPassword}
+              onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+              className={inputClasses}
+              required
+            />
+          </div>
+          <div>
+            <Label className={labelClasses}>Confirm New Password</Label>
+            <Input
+              type="password"
+              value={passwordData.confirmPassword}
+              onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+              className={inputClasses}
+              required
+            />
+          </div>
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              disabled={isChangingPassword}
+              className="rounded-xl text-white gap-2"
+              style={{ backgroundColor: currentTheme.primary }}
+            >
+              <Lock className="w-4 h-4" />
+              {isChangingPassword ? 'Changing...' : 'Change Password'}
+            </Button>
+          </div>
+        </form>
       </GlassCard>
     </div>
   );

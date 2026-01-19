@@ -304,12 +304,20 @@ function LayoutContent({ children, currentPageName }) {
         <main className="p-4 lg:p-8 font-sf">
           {children}
         </main>
-      </div>
-    </div>
-  );
-}
 
-export default function Layout({ children, currentPageName }) {
+        {/* Footer */}
+        <footer className={cn(
+          "mt-auto py-4 px-4 lg:px-8 border-t text-center text-sm no-print",
+          darkMode ? "border-gray-800 text-gray-400" : "border-gray-200 text-gray-500"
+        )}>
+          Developed by <span className="font-medium">Jan Michael Besinga</span> | <a href="mailto:janmichaelbesinga873@gmail.com" className="hover:underline">janmichaelbesinga873@gmail.com</a>
+        </footer>
+        </div>
+        </div>
+        );
+        }
+
+        export default function Layout({ children, currentPageName }) {
   return (
     <ThemeProvider>
       <LanguageProvider>
