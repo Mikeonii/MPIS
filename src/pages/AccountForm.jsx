@@ -10,6 +10,14 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function AccountFormPage() {
   const { darkMode, currentTheme } = useTheme();
@@ -19,6 +27,9 @@ export default function AccountFormPage() {
   const urlParams = new URLSearchParams(window.location.search);
   const accountId = urlParams.get('id');
   const isEditing = !!accountId;
+
+  const [showAssistanceDialog, setShowAssistanceDialog] = useState(false);
+  const [newAccountId, setNewAccountId] = useState(null);
 
   const { data: account } = useQuery({
     queryKey: ['account', accountId],
@@ -83,7 +94,13 @@ export default function AccountFormPage() {
       }
 
       toast.success(t('savedSuccessfully'));
-      window.location.href = createPageUrl(`AccountView?id=${savedAccountId}`);
+      
+      if (!isEditing) {
+        setNewAccountId(savedAccountId);
+        setShowAssistanceDialog(true);
+      } else {
+        window.location.href = createPageUrl(`AccountView?id=${savedAccountId}`);
+      }
     } catch (error) {
       console.error('Error saving account:', error);
       toast.error('Failed to save account');
@@ -134,6 +151,42 @@ export default function AccountFormPage() {
         onCancel={handleCancel}
         isLoading={createAccountMutation.isPending || updateAccountMutation.isPending}
       />
+
+      {/* Add Assistance Dialog */}
+      <Dialog open={showAssistanceDialog} onOpenChange={setShowAssistanceDialog}>
+        <DialogContent className={darkMode ? "bg-gray-900 border-gray-700" : ""}>
+          <DialogHeader>
+            <DialogTitle className={darkMode ? "text-white" : ""}>
+              Account Created Successfully
+            </DialogTitle>
+            <DialogDescription>
+              Would you like to add assistance to this account now?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAssistanceDialog(false);
+                window.location.href = createPageUrl(`AccountView?id=${newAccountId}`);
+              }}
+              className={darkMode ? "border-gray-600" : ""}
+            >
+              Not Now
+            </Button>
+            <Button
+              onClick={() => {
+                setShowAssistanceDialog(false);
+                window.location.href = createPageUrl(`AccountView?id=${newAccountId}&tab=assistance`);
+              }}
+              className="text-white"
+              style={{ backgroundColor: currentTheme.primary }}
+            >
+              Add Assistance
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

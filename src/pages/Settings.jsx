@@ -26,7 +26,8 @@ export default function Settings() {
   const [profileData, setProfileData] = useState({
     full_name: '',
     position: '',
-    username: ''
+    username: '',
+    assistance_period: 90
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -38,7 +39,8 @@ export default function Settings() {
         setProfileData({
           full_name: userData.full_name || '',
           position: userData.position || '',
-          username: userData.username || ''
+          username: userData.username || '',
+          assistance_period: userData.assistance_period || 90
         });
       } catch (e) {
         console.log('User not logged in');
@@ -52,7 +54,8 @@ export default function Settings() {
     try {
       await base44.auth.updateMe({
         position: profileData.position,
-        username: profileData.username
+        username: profileData.username,
+        assistance_period: parseInt(profileData.assistance_period) || 90
       });
       toast.success(t('savedSuccessfully'));
     } catch (error) {
@@ -150,6 +153,23 @@ export default function Settings() {
                 placeholder="Enter username"
               />
             </div>
+          </div>
+          <div>
+            <Label className={labelClasses}>Assistance Period (Days)</Label>
+            <Input
+              type="number"
+              value={profileData.assistance_period}
+              onChange={(e) => setProfileData({ ...profileData, assistance_period: e.target.value })}
+              className={inputClasses}
+              placeholder="90"
+              min="1"
+            />
+            <p className={cn(
+              "text-xs mt-1",
+              darkMode ? "text-gray-500" : "text-gray-400"
+            )}>
+              Minimum days before a family can receive assistance again
+            </p>
           </div>
           <div className="flex justify-end">
             <Button

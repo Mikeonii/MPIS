@@ -36,8 +36,9 @@ export default function AccountView() {
 
   const urlParams = new URLSearchParams(window.location.search);
   const accountId = urlParams.get('id');
+  const tabParam = urlParams.get('tab');
 
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState(tabParam || 'profile');
   const [printType, setPrintType] = useState(null);
 
   const { data: account, isLoading } = useQuery({
@@ -355,6 +356,40 @@ export default function AccountView() {
                     "divide-y",
                     darkMode ? "divide-gray-700" : "divide-gray-100"
                   )}>
+                    {!account.representative_same_as_holder && account.rep_first_name && (
+                      <tr>
+                        <td className={cn(
+                          "py-3",
+                          darkMode ? "text-white" : "text-gray-900"
+                        )}>
+                          {account.rep_last_name}, {account.rep_first_name} {account.rep_middle_name || ''}
+                        </td>
+                        <td className={cn(
+                          "py-3",
+                          darkMode ? "text-gray-300" : "text-gray-600"
+                        )}>
+                          {account.rep_relationship}
+                        </td>
+                        <td className={cn(
+                          "py-3 text-center",
+                          darkMode ? "text-gray-300" : "text-gray-600"
+                        )}>
+                          {account.rep_birthdate ? calculateAge(account.rep_birthdate) : '-'}
+                        </td>
+                        <td className={cn(
+                          "py-3",
+                          darkMode ? "text-gray-300" : "text-gray-600"
+                        )}>
+                          {account.rep_occupation || '-'}
+                        </td>
+                        <td className={cn(
+                          "py-3 text-right",
+                          darkMode ? "text-gray-300" : "text-gray-600"
+                        )}>
+                          ₱{(account.rep_monthly_income || 0).toLocaleString()}
+                        </td>
+                      </tr>
+                    )}
                     {familyMembers.map((member, index) => (
                       <tr key={member.id || index}>
                         <td className={cn(
