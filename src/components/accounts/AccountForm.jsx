@@ -1,7 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/components/ui/ThemeContext';
 import { useLanguage } from '@/components/ui/LanguageContext';
+import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 import GlassCard from '@/components/common/GlassCard';
+import LastNameWarning from './LastNameWarning';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +42,14 @@ export default function AccountForm({
   const [cities, setCities] = useState([]);
   const [barangaysList, setBarangaysList] = useState([]);
   const [loadingLocations, setLoadingLocations] = useState(true);
+
+  // Fetch user settings for assistance period
+  const { data: user } = useQuery({
+    queryKey: ['user-settings'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const assistancePeriod = user?.assistance_period || 90;
 
   const [expandedSections, setExpandedSections] = useState({
     personal: true,
@@ -287,6 +299,11 @@ export default function AccountForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Last Name Warning */}
+      {!account && formData.last_name && (
+        <LastNameWarning lastName={formData.last_name} assistancePeriod={assistancePeriod} />
+      )}
+
       {/* Personal Information */}
       <GlassCard className="overflow-hidden">
         <SectionHeader title={t('personalInfo')} section="personal" />
