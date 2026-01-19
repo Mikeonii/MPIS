@@ -40,6 +40,11 @@ export default function AccountForm({
   const { darkMode, currentTheme } = useTheme();
   const { t } = useLanguage();
 
+  const [regions, setRegions] = useState([]);
+  const [provinces, setProvinces] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [loadingLocations, setLoadingLocations] = useState(true);
+
   const [expandedSections, setExpandedSections] = useState({
     personal: true,
     address: true,
@@ -100,6 +105,22 @@ export default function AccountForm({
   );
 
   useEffect(() => {
+    fetchRegions();
+  }, []);
+
+  useEffect(() => {
+    if (formData.region) {
+      fetchProvinces(formData.region);
+    }
+  }, [formData.region]);
+
+  useEffect(() => {
+    if (formData.province) {
+      fetchCities(formData.province);
+    }
+  }, [formData.province]);
+
+  useEffect(() => {
     if (formData.representative_same_as_holder) {
       setFormData(prev => ({
         ...prev,
@@ -125,6 +146,43 @@ export default function AccountForm({
       }));
     }
   }, [formData.representative_same_as_holder, formData.last_name, formData.first_name]);
+
+  const fetchRegions = async () => {
+    try {
+      const response = await fetch('https://psgc.gitlab.io/api/regions/');
+      const data = await response.json();
+      setRegions(data);
+      setLoadingLocations(false);
+    } catch (error) {
+      console.error('Error fetching regions:', error);
+      setRegions([{ code: '160000000', name: 'Caraga' }]);
+      setLoadingLocations(false);
+    }
+  };
+
+  const fetchProvinces = async (regionCode) => {
+    try {
+      const response = await fetch('https://psgc.gitlab.io/api/provinces/');
+      const data = await response.json();
+      const filtered = data.filter(p => p.regionCode === regionCode);
+      setProvinces(filtered.length > 0 ? filtered : [{ code: '168500000', name: 'Surigao del Sur' }]);
+    } catch (error) {
+      console.error('Error fetching provinces:', error);
+      setProvinces([{ code: '168500000', name: 'Surigao del Sur' }]);
+    }
+  };
+
+  const fetchCities = async (provinceCode) => {
+    try {
+      const response = await fetch('https://psgc.gitlab.io/api/cities-municipalities/');
+      const data = await response.json();
+      const filtered = data.filter(c => c.provinceCode === provinceCode);
+      setCities(filtered.length > 0 ? filtered : [{ name: 'Madrid' }]);
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+      setCities([{ name: 'Madrid' }]);
+    }
+  };
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -387,36 +445,90 @@ export default function AccountForm({
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <Label className={labelClasses}>{t('cityMunicipality')}</Label>
-                <Input
-                  value={formData.city_municipality}
-                  className={inputClasses}
-                  disabled
-                />
-              </div>
-              <div>
-                <Label className={labelClasses}>{t('district')}</Label>
-                <Input
-                  value={formData.district}
-                  onChange={(e) => handleChange('district', e.target.value)}
-                  className={inputClasses}
-                />
+                <Label className={labelClasses}>{t('region')}</Label>
+                <Select
+                  value={formData.region}
+                  onValueChange={(value) => {
+                    handleChange('region', value);
+                    handleChange('province', '');
+                    handleChange('city_municipality', '');
+                    handleChange('district', '');
+                  }}
+                >
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue placeholder="Select region" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {loadingLocations ? (
+                      <SelectItem value="loading" disabled>Loading...</SelectItem>
+                    ) : regions.length > 0 ? (
+                      regions.map(region => (
+                        <SelectItem key={region.code} value={region.code}>
+                          {region.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="160000000">Caraga</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label className={labelClasses}>{t('province')}</Label>
-                <Input
+                <Select
                   value={formData.province}
-                  className={inputClasses}
-                  disabled
-                />
+                  onValueChange={(value) => {
+                    handleChange('province', value);
+                    handleChange('city_municipality', '');
+                    handleChange('district', '');
+                  }}
+                  disabled={!formData.region}
+                >
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue placeholder="Select province" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {provinces.map(province => (
+                      <SelectItem key={province.code} value={province.code}>
+                        {province.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <Label className={labelClasses}>{t('region')}</Label>
-                <Input
-                  value={formData.region}
-                  className={inputClasses}
-                  disabled
-                />
+                <Label className={labelClasses}>{t('cityMunicipality')}</Label>
+                <Select
+                  value={formData.city_municipality}
+                  onValueChange={(value) => handleChange('city_municipality', value)}
+                  disabled={!formData.province}
+                >
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue placeholder="Select city/municipality" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cities.map((city, idx) => (
+                      <SelectItem key={city.code || idx} value={city.name}>
+                        {city.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className={labelClasses}>{t('district')}</Label>
+                <Select
+                  value={formData.district}
+                  onValueChange={(value) => handleChange('district', value)}
+                >
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue placeholder="Select district" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1st District">1st District</SelectItem>
+                    <SelectItem value="2nd District">2nd District</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
