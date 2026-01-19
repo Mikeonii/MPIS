@@ -117,14 +117,14 @@ export default function Dashboard() {
       icon: Users, 
       title: t('totalAccounts'), 
       value: accounts.length,
-      trend: '+12%',
+      trend: accounts.length > 0 ? '+12%' : null,
       trendUp: true
     },
     { 
       icon: HandHeart, 
       title: t('totalAssistance'), 
       value: `₱${totalAssistanceAmount.toLocaleString()}`,
-      trend: '+8%',
+      trend: totalAssistanceAmount > 0 ? '+8%' : null,
       trendUp: true
     },
     { 
@@ -137,7 +137,7 @@ export default function Dashboard() {
       icon: Calendar, 
       title: t('assistedThisMonth'), 
       value: assistedThisMonth,
-      trend: '+5%',
+      trend: assistedThisMonth > 0 ? '+5%' : null,
       trendUp: true
     },
   ];
