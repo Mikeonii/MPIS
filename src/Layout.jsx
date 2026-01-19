@@ -95,9 +95,9 @@ function LayoutContent({ children, currentPageName }) {
           <div className="p-6 border-b border-gray-200/20">
             <div className="flex items-center gap-3">
               <img 
-                src="https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=200&h=200&fit=crop"
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/696dc38131ba35d0783e445b/2d46c5743_image.png"
                 alt="Madrid Palamboon Logo"
-                className="w-10 h-10 rounded-xl object-cover"
+                className="w-10 h-10 rounded-full object-cover"
               />
               <div>
                 <h1 className={cn(
