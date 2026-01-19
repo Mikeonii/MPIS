@@ -64,7 +64,9 @@ export default function Settings() {
         username: profileData.username,
         assistance_period: parseInt(profileData.assistance_period) || 90
       });
-      toast.success(t('savedSuccessfully'));
+      const updatedUser = await base44.auth.me();
+      setUser(updatedUser);
+      toast.success('Profile saved successfully!');
     } catch (error) {
       toast.error('Failed to save profile');
     }
@@ -96,10 +98,11 @@ export default function Settings() {
       });
 
       if (response.ok) {
-        toast.success('Password changed successfully');
+        toast.success('Password changed successfully!');
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       } else {
-        toast.error('Failed to change password. Check your current password.');
+        const errorData = await response.json();
+        toast.error(errorData.message || 'Failed to change password. Check your current password.');
       }
     } catch (error) {
       toast.error('Failed to change password');
