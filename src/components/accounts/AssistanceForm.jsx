@@ -9,44 +9,108 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Save, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function AssistanceForm({ 
   accountId,
-  assistances = [], 
   onSave,
   isLoading 
 }) {
   const { darkMode, currentTheme } = useTheme();
   const { t } = useLanguage();
   const [user, setUser] = useState(null);
+  const [assistancePeriod, setAssistancePeriod] = useState(90);
+  const [canAddAssistance, setCanAddAssistance] = useState(true);
+  const [lastAssistanceDate, setLastAssistanceDate] = useState(null);
 
-  const [localAssistances, setLocalAssistances] = useState(
-    assistances.length > 0 
-      ? assistances 
-      : [{ 
-          type_of_assistance: '', 
-          interviewed_by: '', 
-          interviewed_by_position: '',
-          amount: '', 
-          pharmacy_id: '',
-          pharmacy_name: '',
-          date_rendered: new Date().toISOString().split('T')[0]
-        }]
-  );
+  const [localAssistances, setLocalAssistances] = useState([{ 
+    type_of_assistance: '', 
+    interviewed_by: '', 
+    interviewed_by_position: '',
+    amount: '', 
+    pharmacy_id: '',
+    pharmacy_name: '',
+    date_rendered: new Date().toISOString().split('T')[0]
+  }]);
 
   const { data: pharmacies = [] } = useQuery({
     queryKey: ['pharmacies'],
     queryFn: () => base44.entities.Pharmacy.list(),
   });
 
+  const { data: account } = useQuery({
+    queryKey: ['account', accountId],
+    queryFn: () => base44.entities.Account.list().then(accounts => 
+      accounts.find(a => a.id === accountId)
+    ),
+    enabled: !!accountId,
+  });
+
+  const { data: familyMembers = [] } = useQuery({
+    queryKey: ['familyMembers', accountId],
+    queryFn: () => base44.entities.FamilyMember.filter({ account_id: accountId }),
+    enabled: !!accountId,
+  });
+
   useEffect(() => {
     const loadUser = async () => {
-      const userData = await base44.auth.me();
-      setUser(userData);
+      try {
+        const userData = await base44.auth.me();
+        setUser(userData);
+        const period = userData.assistance_period || 90;
+        setAssistancePeriod(period);
+      } catch (e) {
+        console.log('User not logged in');
+      }
     };
     loadUser();
   }, []);
+
+  useEffect(() => {
+    if (accountId && assistancePeriod) {
+      checkAssistanceEligibility();
+    }
+  }, [accountId, assistancePeriod]);
+
+  const checkAssistanceEligibility = async () => {
+    if (!accountId) return;
+
+    try {
+      const allAssistances = await base44.entities.Assistance.list();
+      
+      const now = new Date();
+      
+      // Get IDs of all family members + account holder
+      const familyMemberIds = [accountId, ...familyMembers.map(fm => fm.account_id)];
+      
+      // Check if any family member received assistance within the period
+      const recentAssistance = allAssistances.find(assistance => {
+        if (!familyMemberIds.includes(assistance.account_id)) return false;
+        
+        const assistanceDate = new Date(assistance.date_rendered || assistance.created_date);
+        const daysSince = (now - assistanceDate) / (1000 * 60 * 60 * 24);
+        
+        return daysSince < assistancePeriod;
+      });
+
+      if (recentAssistance) {
+        setCanAddAssistance(false);
+        setLastAssistanceDate(new Date(recentAssistance.date_rendered || recentAssistance.created_date));
+        const assistanceDate = new Date(recentAssistance.date_rendered || recentAssistance.created_date);
+        const daysRemaining = Math.ceil(assistancePeriod - (now - assistanceDate) / (1000 * 60 * 60 * 24));
+        
+        toast.error(`This family already received assistance within ${assistancePeriod} days. ${daysRemaining} days remaining before eligible again.`, {
+          duration: 5000,
+        });
+      } else {
+        setCanAddAssistance(true);
+        setLastAssistanceDate(null);
+      }
+    } catch (error) {
+      console.error('Error checking eligibility:', error);
+    }
+  };
 
   const addAssistance = () => {
     setLocalAssistances(prev => [
@@ -83,6 +147,10 @@ export default function AssistanceForm({
   };
 
   const handleSubmit = () => {
+    if (!canAddAssistance) {
+      toast.error('Cannot add assistance. Waiting period not met.');
+      return;
+    }
     onSave(localAssistances.filter(a => a.type_of_assistance && a.amount));
   };
 
@@ -100,12 +168,20 @@ export default function AssistanceForm({
 
   return (
     <GlassCard className="p-6">
-      <h3 className={cn(
-        "text-lg font-semibold mb-4",
-        darkMode ? "text-white" : "text-gray-900"
-      )}>
-        {t('assistanceRendered')}
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className={cn(
+          "text-lg font-semibold",
+          darkMode ? "text-white" : "text-gray-900"
+        )}>
+          {t('addAssistance')}
+        </h3>
+        {!canAddAssistance && lastAssistanceDate && (
+          <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400">
+            <AlertTriangle className="w-4 h-4" />
+            <span>Ineligible for {assistancePeriod} days</span>
+          </div>
+        )}
+      </div>
 
       <div className="space-y-4">
         {localAssistances.map((assistance, index) => (
@@ -211,6 +287,7 @@ export default function AssistanceForm({
           type="button"
           variant="outline"
           onClick={addAssistance}
+          disabled={!canAddAssistance}
           className={cn(
             "w-full rounded-xl border-dashed",
             darkMode ? "border-gray-600 text-gray-300" : "border-gray-300 text-gray-600"
@@ -223,10 +300,11 @@ export default function AssistanceForm({
         <div className="flex justify-end mt-4">
           <Button
             onClick={handleSubmit}
-            disabled={isLoading}
-            className="rounded-xl px-6 text-white"
+            disabled={isLoading || localAssistances.length === 0 || !canAddAssistance}
+            className="rounded-xl px-6 text-white gap-2"
             style={{ backgroundColor: currentTheme.primary }}
           >
+            <Save className="w-4 h-4" />
             {isLoading ? 'Saving...' : t('save')}
           </Button>
         </div>
