@@ -4,6 +4,7 @@ import { createPageUrl } from './utils';
 import { LanguageProvider, useLanguage } from '@/components/ui/LanguageContext';
 import { ThemeProvider, useTheme } from '@/components/ui/ThemeContext';
 import { base44 } from '@/api/base44Client';
+import GlobalSearch from '@/components/search/GlobalSearch';
 import {
   LayoutDashboard,
   Users,
@@ -270,7 +271,7 @@ function LayoutContent({ children, currentPageName }) {
             ? "bg-gray-900/80 border-b border-gray-800"
             : "bg-white/80 border-b border-gray-200/50"
         )}>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
               className={cn(
@@ -282,21 +283,21 @@ function LayoutContent({ children, currentPageName }) {
             >
               <Menu className="w-6 h-6" />
             </button>
-            <div className="flex items-center gap-2">
-              <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
-                style={{ background: `linear-gradient(135deg, ${currentTheme.primary}, ${currentTheme.accent})` }}
-              >
-                M
-              </div>
-              <span className={cn(
-                "font-semibold font-sf",
-                darkMode ? "text-white" : "text-gray-900"
-              )}>
-                Madrid Palamboon
-              </span>
+            <div className="flex-1 max-w-md">
+              <GlobalSearch />
             </div>
-            <div className="w-10" />
+          </div>
+        </header>
+
+        {/* Desktop Header with Search */}
+        <header className={cn(
+          "hidden lg:block sticky top-0 z-30 px-8 py-4 backdrop-blur-xl no-print",
+          darkMode 
+            ? "bg-gray-900/80 border-b border-gray-800"
+            : "bg-white/80 border-b border-gray-200/50"
+        )}>
+          <div className="flex items-center justify-end">
+            <GlobalSearch />
           </div>
         </header>
 
