@@ -200,22 +200,21 @@ export default function AccountForm({
   };
 
   const fetchBarangays = async (cityCode) => {
-    try {
-      const response = await fetch(`https://psgc.gitlab.io/api/cities-municipalities/${cityCode}/barangays/`);
-      const data = await response.json();
-      setBarangaysList(data);
-    } catch (error) {
-      console.error('Error fetching barangays:', error);
-      setBarangaysList([
-        { name: "Bayogo" }, { name: "Beto" }, { name: "Calabcab" }, { name: "Calagdaan" }, 
-        { name: "Consuelo" }, { name: "Coring" }, { name: "Cortes" }, { name: "Diaz" }, 
-        { name: "Don Paulino" }, { name: "Doyos" }, { name: "Dubdub" }, { name: "Embarcadero" }, 
-        { name: "Gacub" }, { name: "Gamuton" }, { name: "Ibarra" }, { name: "Linibonan" }, 
-        { name: "Kalaw" }, { name: "Magsaysay" }, { name: "Mahayahay" }, { name: "Matin-ao" }, 
-        { name: "Poblacion" }, { name: "Sebo" }, { name: "Silop" }, { name: "Tagbongabong" }, 
-        { name: "Unidad" }
-      ]);
-    }
+    // Madrid, Surigao del Sur barangays
+    setBarangaysList([
+      { name: "Bayogo" },
+      { name: "Bongbong" },
+      { name: "Carpenito" },
+      { name: "Del Pilar" },
+      { name: "Kauswagan" },
+      { name: "Magsaysay" },
+      { name: "New Katipunan" },
+      { name: "Roxas" },
+      { name: "San Isidro" },
+      { name: "San Roque (Poblacion)" },
+      { name: "Segundao" },
+      { name: "Sosongon" }
+    ]);
   };
 
   const handleChange = (field, value) => {
