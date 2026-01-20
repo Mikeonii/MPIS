@@ -7,6 +7,8 @@ import GlassCard from '@/components/common/GlassCard';
 import { cn } from '@/lib/utils';
 import { MapPin, TrendingDown, Users, ChevronDown, ChevronUp, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 
 export default function BarangayReports() {
   const { darkMode, currentTheme } = useTheme();
@@ -303,7 +305,13 @@ export default function BarangayReports() {
                               "p-4",
                               darkMode ? "text-white" : "text-gray-900"
                             )}>
-                              {getFullName(account)}
+                              <Link 
+                                to={createPageUrl(`AccountView?id=${account.id}`)}
+                                className="hover:underline"
+                                style={{ color: currentTheme.primary }}
+                              >
+                                {getFullName(account)}
+                              </Link>
                             </td>
                             <td className={cn(
                               "p-4 font-semibold",
