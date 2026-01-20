@@ -156,8 +156,42 @@ export default function LastNameWarning({ lastName, assistancePeriod = 90, onByp
               </div>
             </div>
           )}
+          {warningData.daysRemaining > 0 && onBypassGracePeriod && (
+            <div className="mt-3 pt-3 border-t border-amber-200 dark:border-amber-800">
+              <Button
+                onClick={() => setShowBypassDialog(true)}
+                variant="outline"
+                size="sm"
+                className="text-amber-700 border-amber-300 hover:bg-amber-100 dark:text-amber-300 dark:border-amber-700 dark:hover:bg-amber-900/20"
+              >
+                Bypass Grace Period
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
+
+    <AlertDialog open={showBypassDialog} onOpenChange={setShowBypassDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Bypass Grace Period?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This account has received assistance within the last {assistancePeriod} days. 
+            Are you sure you want to bypass the grace period and proceed with creating this account?
+            <br /><br />
+            <strong>Last assistance:</strong> {format(warningData.mostRecentDate, 'MMM d, yyyy')} 
+            ({warningData.daysSince} days ago)
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleBypass}>
+            Yes, Bypass Grace Period
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </>
   );
 }
