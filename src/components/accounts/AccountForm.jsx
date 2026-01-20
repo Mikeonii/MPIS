@@ -130,10 +130,9 @@ export default function AccountForm({
   }, [formData.province]);
 
   useEffect(() => {
-    if (formData.city_municipality_code) {
-      fetchBarangays(formData.city_municipality_code);
-    }
-  }, [formData.city_municipality_code]);
+    // Load barangays on mount for Madrid
+    fetchBarangays('168507000'); // Madrid city code
+  }, []);
 
   useEffect(() => {
     if (formData.representative_same_as_holder) {
