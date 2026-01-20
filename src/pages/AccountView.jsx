@@ -9,6 +9,8 @@ import GlassCard from '@/components/common/GlassCard';
 import AssistanceForm from '@/components/accounts/AssistanceForm';
 import GeneralIntakeSheet from '@/components/print/GeneralIntakeSheet';
 import ApplicationForm from '@/components/print/ApplicationForm';
+import CertificateOfEligibility from '@/components/print/CertificateOfEligibility';
+import GuaranteeLetter from '@/components/print/GuaranteeLetter';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -41,6 +43,7 @@ export default function AccountView() {
   const [activeTab, setActiveTab] = useState(tabParam || 'profile');
   const [printType, setPrintType] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [selectedAssistance, setSelectedAssistance] = useState(null);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -142,12 +145,28 @@ export default function AccountView() {
       {/* Print Content */}
       {printType && (
         <div className="print-only">
-          <GeneralIntakeSheet 
-            account={account} 
-            familyMembers={familyMembers}
-            assistances={assistances}
-            currentUser={currentUser}
-          />
+          {printType === 'intake' && (
+            <GeneralIntakeSheet 
+              account={account} 
+              familyMembers={familyMembers}
+              assistances={assistances}
+              currentUser={currentUser}
+            />
+          )}
+          {printType === 'certificate' && (
+            <CertificateOfEligibility
+              account={account}
+              assistance={selectedAssistance}
+              currentUser={currentUser}
+            />
+          )}
+          {printType === 'guarantee' && (
+            <GuaranteeLetter
+              account={account}
+              assistance={selectedAssistance}
+              currentUser={currentUser}
+            />
+          )}
         </div>
       )}
 
