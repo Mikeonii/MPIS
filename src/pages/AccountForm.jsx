@@ -70,7 +70,7 @@ export default function AccountFormPage() {
     mutationFn: (id) => base44.entities.FamilyMember.delete(id),
   });
 
-  const handleSave = async (accountData, familyMembersData) => {
+  const handleSave = async (accountData, familyMembersData, assistances = []) => {
     try {
       let savedAccountId = accountId;
 
@@ -94,7 +94,28 @@ export default function AccountFormPage() {
         });
       }
 
+      // Create assistances and update fund sources
+      for (const assistance of assistances) {
+        await base44.entities.Assistance.create({
+          ...assistance,
+          account_id: savedAccountId
+        });
+        
+        // Deduct from source of funds
+        const source = await base44.entities.SourceOfFunds.list().then(sources => 
+          sources.find(s => s.id === assistance.source_of_funds_id)
+        );
+        if (source) {
+          const newRemaining = source.amount_remaining - parseFloat(assistance.amount);
+          await base44.entities.SourceOfFunds.update(source.id, {
+            amount_remaining: newRemaining,
+            status: newRemaining <= 0 ? 'Depleted' : source.status
+          });
+        }
+      }
+
       toast.success(t('savedSuccessfully'));
+      queryClient.invalidateQueries({ queryKey: ['sourceOfFunds'] });
       
       if (!isEditing) {
         setNewAccountId(savedAccountId);
