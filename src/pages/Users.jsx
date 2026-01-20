@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
-import { UserPlus, Pencil, Trash2, Search, Mail, Shield } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, Search, Mail, Shield, Key } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -24,10 +24,12 @@ export default function UsersPage() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   
   const [inviteData, setInviteData] = useState({ email: '', role: 'user' });
   const [editData, setEditData] = useState({ full_name: '', position: '', role: '' });
+  const [passwordData, setPasswordData] = useState({ newPassword: '', confirmPassword: '' });
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
@@ -90,6 +92,34 @@ export default function UsersPage() {
   const handleDelete = (user) => {
     setSelectedUser(user);
     setShowDeleteDialog(true);
+  };
+
+  const handleChangePassword = (user) => {
+    setSelectedUser(user);
+    setPasswordData({ newPassword: '', confirmPassword: '' });
+    setShowPasswordDialog(true);
+  };
+
+  const handleSavePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    if (passwordData.newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    
+    try {
+      await base44.entities.User.update(selectedUser.id, {
+        password: passwordData.newPassword
+      });
+      toast.success('Password updated successfully');
+      setShowPasswordDialog(false);
+      setPasswordData({ newPassword: '', confirmPassword: '' });
+    } catch (error) {
+      toast.error('Failed to update password: ' + error.message);
+    }
   };
 
   const filteredUsers = users.filter(user => {
@@ -287,6 +317,17 @@ export default function UsersPage() {
                         <Button
                           variant="ghost"
                           size="sm"
+                          onClick={() => handleChangePassword(user)}
+                          className={cn(
+                            "hover:bg-green-50 dark:hover:bg-green-900/30",
+                            darkMode ? "text-gray-400" : "text-gray-600"
+                          )}
+                        >
+                          <Key className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleDelete(user)}
                           className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
                         >
@@ -417,6 +458,59 @@ export default function UsersPage() {
               style={{ backgroundColor: currentTheme.primary }}
             >
               {updateUserMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className={cn(darkMode ? "bg-gray-900 border-gray-800" : "bg-white")}>
+          <DialogHeader>
+            <DialogTitle className={cn(darkMode ? "text-white" : "text-gray-900")}>
+              Change Password
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label className={cn("text-sm", darkMode ? "text-gray-300" : "text-gray-700")}>
+                New Password *
+              </Label>
+              <Input
+                type="password"
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                placeholder="Enter new password"
+                className={inputClasses}
+              />
+            </div>
+            <div>
+              <Label className={cn("text-sm", darkMode ? "text-gray-300" : "text-gray-700")}>
+                Confirm Password *
+              </Label>
+              <Input
+                type="password"
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                placeholder="Confirm new password"
+                className={inputClasses}
+              />
+            </div>
+            <p className={cn("text-xs", darkMode ? "text-gray-400" : "text-gray-600")}>
+              Password must be at least 6 characters long
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSavePassword}
+              disabled={!passwordData.newPassword || !passwordData.confirmPassword}
+              className="text-white"
+              style={{ backgroundColor: currentTheme.primary }}
+            >
+              Update Password
             </Button>
           </DialogFooter>
         </DialogContent>
