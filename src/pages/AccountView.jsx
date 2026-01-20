@@ -107,8 +107,9 @@ export default function AccountView() {
     }
   };
 
-  const handlePrint = (type) => {
+  const handlePrint = (type, assistance = null) => {
     setPrintType(type);
+    setSelectedAssistance(assistance);
     setTimeout(() => {
       window.print();
       setPrintType(null);
@@ -494,6 +495,7 @@ export default function AccountView() {
                       <th className="pb-3 font-medium text-right">{t('amount')}</th>
                       <th className="pb-3 font-medium">{t('pharmacyName')}</th>
                       <th className="pb-3 font-medium">{t('interviewedBy')}</th>
+                      <th className="pb-3 font-medium no-print">Forms</th>
                     </tr>
                   </thead>
                   <tbody className={cn(
@@ -540,11 +542,33 @@ export default function AccountView() {
                         )}>
                           {assistance.interviewed_by || '-'}
                         </td>
+                        <td className="py-3 no-print">
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => handlePrint('certificate', assistance)}
+                              size="sm"
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              <FileText className="w-3 h-3 mr-1" />
+                              Certificate
+                            </Button>
+                            <Button
+                              onClick={() => handlePrint('guarantee', assistance)}
+                              size="sm"
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              <FileText className="w-3 h-3 mr-1" />
+                              GL
+                            </Button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                     {assistances.length === 0 && (
                       <tr>
-                        <td colSpan={5} className={cn(
+                        <td colSpan={6} className={cn(
                           "py-8 text-center",
                           darkMode ? "text-gray-400" : "text-gray-500"
                         )}>
