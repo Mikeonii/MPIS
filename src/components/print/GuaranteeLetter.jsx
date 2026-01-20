@@ -32,7 +32,7 @@ export default function GuaranteeLetter({ account, assistance, currentUser }) {
       <div className="border-4 p-6" style={{ borderColor: primaryColor }}>
         {/* Header with Logo */}
         <div className="flex items-center justify-center gap-4 mb-4 pb-4 border-b-2" style={{ borderColor: primaryColor }}>
-          <div className="w-20 h-20 rounded-full flex items-center justify-center p-2" style={{ border: `3px solid ${primaryColor}`, backgroundColor: 'white' }}>
+          <div className="rounded-full flex items-center justify-center" style={{ width: '100px', height: '100px', border: `3px solid ${primaryColor}`, backgroundColor: 'white', padding: '8px' }}>
             <img 
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/696dc38131ba35d0783e445b/2d46c5743_image.png"
               alt="Madrid Seal"
