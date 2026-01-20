@@ -200,24 +200,22 @@ export default function AccountForm({
   };
 
   const fetchBarangays = async (cityCode) => {
-    // Madrid, Surigao del Sur barangays (official PSGC list)
+    // Madrid, Surigao del Sur barangays (official list)
     setBarangaysList([
-      { name: "Alegria" },
+      { name: "Bagsac" },
       { name: "Bayogo" },
-      { name: "Bonga" },
-      { name: "Bonifacio" },
-      { name: "Crossing" },
-      { name: "Elizabeth" },
-      { name: "General Island" },
-      { name: "Ladgaron" },
-      { name: "Maligaya" },
-      { name: "New Visayas" },
-      { name: "Paglaum" },
-      { name: "Patong" },
-      { name: "Poblacion" },
-      { name: "San Isidro" },
-      { name: "San Jose" },
-      { name: "Tinago" }
+      { name: "Linibonan" },
+      { name: "Magsaysay" },
+      { name: "Manga" },
+      { name: "Panayogon" },
+      { name: "Patong Patong" },
+      { name: "Quirino (Poblacion/Town Proper)" },
+      { name: "San Antonio" },
+      { name: "San Juan (Carac-an)" },
+      { name: "San Roque" },
+      { name: "San Vicente" },
+      { name: "Songkit" },
+      { name: "Union" }
     ]);
   };
 
