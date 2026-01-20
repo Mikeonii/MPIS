@@ -24,7 +24,7 @@ export default function GuaranteeLetter({ account, assistance, currentUser }) {
   const validUntil = addDays(issueDate, 3);
 
   return (
-    <div className="print-content bg-white text-black p-6 max-w-[8.5in] mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10pt', height: '5.5in' }}>
+    <div className="print-content bg-white text-black p-6 max-w-[8.5in] mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10pt', minHeight: '5.5in' }}>
       {/* Header */}
       <div className="flex items-start gap-3 mb-4 pb-3 border-b-2 border-gray-800">
         <img 
@@ -41,7 +41,7 @@ export default function GuaranteeLetter({ account, assistance, currentUser }) {
         </div>
         <div className="text-right text-xs text-gray-600">
           <p>Form 4</p>
-          <p className="font-semibold mt-1">GL-2026-____</p>
+          <p className="font-semibold mt-1">{assistance?.gl_number || 'MP-GL-____'}</p>
         </div>
       </div>
 
@@ -84,7 +84,15 @@ export default function GuaranteeLetter({ account, assistance, currentUser }) {
       {assistance?.medicines && assistance.medicines.length > 0 && (
         <div className="bg-blue-50 p-3 border-l-4 border-blue-400 mb-3">
           <p className="text-xs font-semibold text-gray-700 mb-1">Medicines Requested:</p>
-          <p className="text-xs text-gray-700 leading-relaxed">{assistance.medicines.join(', ')}</p>
+          {Array.isArray(assistance.medicines) && typeof assistance.medicines[0] === 'object' ? (
+            <ul className="text-xs text-gray-700 space-y-0.5 ml-3">
+              {assistance.medicines.map((med, i) => (
+                <li key={i}>{med.name} - <span className="font-semibold">Qty: {med.quantity}</span></li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-gray-700 leading-relaxed">{assistance.medicines.join(', ')}</p>
+          )}
         </div>
       )}
 

@@ -23,7 +23,7 @@ export default function CertificateOfEligibility({ account, assistance, currentU
   const issueDate = new Date(assistance?.date_rendered || new Date());
 
   return (
-    <div className="print-content bg-white text-black p-6 max-w-[8.5in] mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10pt', height: '5.5in' }}>
+    <div className="print-content bg-white text-black p-6 max-w-[8.5in] mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10pt', minHeight: '5.5in' }}>
       {/* Header */}
       <div className="flex items-start gap-3 mb-4 pb-3 border-b-2 border-gray-800">
         <img 
@@ -77,7 +77,9 @@ export default function CertificateOfEligibility({ account, assistance, currentU
           <div className="bg-blue-50 p-3 border-l-4 border-blue-400">
             <p className="text-xs font-semibold text-gray-700 mb-1">Medicines Requested:</p>
             <div className="text-xs text-gray-700 leading-relaxed">
-              {assistance.medicines.join(', ')}
+              {Array.isArray(assistance.medicines) && typeof assistance.medicines[0] === 'object'
+                ? assistance.medicines.map((m, i) => `${m.name} (${m.quantity})`).join(', ')
+                : assistance.medicines.join(', ')}
             </div>
           </div>
         )}
