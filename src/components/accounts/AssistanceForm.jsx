@@ -43,6 +43,7 @@ export default function AssistanceForm({
   }]);
   
   const [medicineInput, setMedicineInput] = useState({});
+  const [medicineQuantity, setMedicineQuantity] = useState({});
   const [suggestedMedicines, setSuggestedMedicines] = useState([]);
 
   const { data: pharmacies = [] } = useQuery({
@@ -65,7 +66,13 @@ export default function AssistanceForm({
     const medicines = new Set();
     allAssistances.forEach(a => {
       if (a.medicines && Array.isArray(a.medicines)) {
-        a.medicines.forEach(m => medicines.add(m));
+        a.medicines.forEach(m => {
+          if (typeof m === 'object' && m.name) {
+            medicines.add(m.name);
+          } else if (typeof m === 'string') {
+            medicines.add(m);
+          }
+        });
       }
     });
     setSuggestedMedicines(Array.from(medicines).sort());
@@ -191,22 +198,29 @@ export default function AssistanceForm({
     ]);
   };
 
-  const addMedicine = (index, medicine) => {
+  const addMedicine = (index, medicine, quantity) => {
     if (!medicine.trim()) return;
+    const qty = quantity || medicineQuantity[index] || '1';
     setLocalAssistances(prev => {
       const updated = [...prev];
-      if (!updated[index].medicines.includes(medicine)) {
-        updated[index].medicines = [...updated[index].medicines, medicine];
+      const exists = updated[index].medicines.find(m => 
+        (typeof m === 'object' && m.name === medicine) || m === medicine
+      );
+      if (!exists) {
+        updated[index].medicines = [...updated[index].medicines, { name: medicine, quantity: qty }];
       }
       return updated;
     });
     setMedicineInput({ ...medicineInput, [index]: '' });
+    setMedicineQuantity({ ...medicineQuantity, [index]: '' });
   };
 
   const removeMedicine = (index, medicineToRemove) => {
     setLocalAssistances(prev => {
       const updated = [...prev];
-      updated[index].medicines = updated[index].medicines.filter(m => m !== medicineToRemove);
+      updated[index].medicines = updated[index].medicines.filter(m => 
+        (typeof m === 'object' && m.name !== medicineToRemove) || m !== medicineToRemove
+      );
       return updated;
     });
   };
@@ -496,7 +510,7 @@ export default function AssistanceForm({
                           addMedicine(index, medicineInput[index]);
                         }
                       }}
-                      placeholder="Type medicine name..."
+                      placeholder="Medicine name..."
                       className={inputClasses}
                       list={`medicine-suggestions-${index}`}
                     />
@@ -505,6 +519,18 @@ export default function AssistanceForm({
                         <option key={i} value={med} />
                       ))}
                     </datalist>
+                    <Input
+                      value={medicineQuantity[index] || ''}
+                      onChange={(e) => setMedicineQuantity({ ...medicineQuantity, [index]: e.target.value })}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addMedicine(index, medicineInput[index]);
+                        }
+                      }}
+                      placeholder="Qty"
+                      className={cn(inputClasses, "w-24")}
+                    />
                     <Button
                       type="button"
                       onClick={() => addMedicine(index, medicineInput[index])}
@@ -548,10 +574,12 @@ export default function AssistanceForm({
                         className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm text-white"
                         style={{ backgroundColor: currentTheme.primary }}
                       >
-                        <span>{med}</span>
+                        <span>
+                          {typeof med === 'object' ? `${med.name} (Qty: ${med.quantity})` : med}
+                        </span>
                         <button
                           type="button"
-                          onClick={() => removeMedicine(index, med)}
+                          onClick={() => removeMedicine(index, typeof med === 'object' ? med.name : med)}
                           className="hover:opacity-75"
                         >
                           <X className="w-3 h-3" />

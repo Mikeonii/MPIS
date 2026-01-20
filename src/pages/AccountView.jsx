@@ -98,10 +98,18 @@ export default function AccountView() {
   };
 
   const handleSaveAssistance = async (assistanceData) => {
-    for (const assistance of assistanceData) {
+    // Get current GL count
+    const allAssistances = await base44.entities.Assistance.list();
+    const glCount = allAssistances.filter(a => a.gl_number).length;
+    
+    for (let i = 0; i < assistanceData.length; i++) {
+      const assistance = assistanceData[i];
+      const glNumber = `MP-GL-${String(glCount + i + 1).padStart(4, '0')}`;
+      
       await createAssistanceMutation.mutateAsync({
         ...assistance,
         account_id: accountId,
+        gl_number: glNumber,
         amount: parseFloat(assistance.amount) || 0
       });
       
