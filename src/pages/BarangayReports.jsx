@@ -5,7 +5,8 @@ import { useTheme } from '@/components/ui/ThemeContext';
 import { useLanguage } from '@/components/ui/LanguageContext';
 import GlassCard from '@/components/common/GlassCard';
 import { cn } from '@/lib/utils';
-import { MapPin, TrendingDown, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { MapPin, TrendingDown, Users, ChevronDown, ChevronUp, Printer } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function BarangayReports() {
   const { darkMode, currentTheme } = useTheme();
@@ -78,19 +79,32 @@ export default function BarangayReports() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className={cn(
-          "text-3xl font-bold",
-          darkMode ? "text-white" : "text-gray-900"
-        )}>
-          Barangay Assistance Reports
-        </h1>
-        <p className={cn(
-          "mt-1",
-          darkMode ? "text-gray-400" : "text-gray-600"
-        )}>
-          Barangays sorted by highest assistance given
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className={cn(
+            "text-3xl font-bold",
+            darkMode ? "text-white" : "text-gray-900"
+          )}>
+            Barangay Assistance Reports
+          </h1>
+          <p className={cn(
+            "mt-1",
+            darkMode ? "text-gray-400" : "text-gray-600"
+          )}>
+            Barangays sorted by highest assistance given
+          </p>
+        </div>
+        <Button
+          onClick={() => window.print()}
+          className="no-print"
+          style={{ 
+            backgroundColor: currentTheme.primary,
+            color: 'white'
+          }}
+        >
+          <Printer className="w-4 h-4 mr-2" />
+          Print to PDF
+        </Button>
       </div>
 
       {/* Summary Cards */}

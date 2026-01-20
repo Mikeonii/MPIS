@@ -5,7 +5,8 @@ import { useTheme } from '@/components/ui/ThemeContext';
 import { useLanguage } from '@/components/ui/LanguageContext';
 import GlassCard from '@/components/common/GlassCard';
 import { cn } from '@/lib/utils';
-import { FileText, Users, TrendingDown } from 'lucide-react';
+import { FileText, Users, TrendingDown, Printer } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function Reports() {
   const { darkMode, currentTheme } = useTheme();
@@ -67,19 +68,32 @@ export default function Reports() {
             Accounts sorted by total assistance given
           </p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl border"
-          style={{ 
-            backgroundColor: darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)',
-            borderColor: currentTheme.primary 
-          }}
-        >
-          <FileText className="w-5 h-5" style={{ color: currentTheme.primary }} />
-          <span className={cn(
-            "font-semibold",
-            darkMode ? "text-white" : "text-gray-900"
-          )}>
-            Total Records: {sortedAccounts.length}
-          </span>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={() => window.print()}
+            className="no-print"
+            style={{ 
+              backgroundColor: currentTheme.primary,
+              color: 'white'
+            }}
+          >
+            <Printer className="w-4 h-4 mr-2" />
+            Print to PDF
+          </Button>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-xl border"
+            style={{ 
+              backgroundColor: darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)',
+              borderColor: currentTheme.primary 
+            }}
+          >
+            <FileText className="w-5 h-5" style={{ color: currentTheme.primary }} />
+            <span className={cn(
+              "font-semibold",
+              darkMode ? "text-white" : "text-gray-900"
+            )}>
+              Total Records: {sortedAccounts.length}
+            </span>
+          </div>
         </div>
       </div>
 
