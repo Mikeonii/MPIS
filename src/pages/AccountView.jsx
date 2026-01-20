@@ -188,17 +188,6 @@ export default function AccountView() {
               <Printer className="w-4 h-4" />
               {t('printGeneralIntake')}
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => handlePrint('application')}
-              className={cn(
-                "rounded-xl gap-2",
-                darkMode ? "border-gray-600" : ""
-              )}
-            >
-              <FileText className="w-4 h-4" />
-              {t('printApplicationForm')}
-            </Button>
             <Link to={createPageUrl(`AccountForm?id=${accountId}`)}>
               <Button
                 className="rounded-xl gap-2 text-white"

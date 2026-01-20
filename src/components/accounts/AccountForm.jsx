@@ -33,7 +33,9 @@ export default function AccountForm({
   familyMembers = [], 
   onSave, 
   onCancel,
-  isLoading 
+  isLoading,
+  bypassGracePeriod = false,
+  onBypassGracePeriod
 }) {
   const { darkMode, currentTheme } = useTheme();
   const { t } = useLanguage();
@@ -301,8 +303,12 @@ export default function AccountForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Last Name Warning */}
-      {!account && formData.last_name && (
-        <LastNameWarning lastName={formData.last_name} assistancePeriod={assistancePeriod} />
+      {!account && formData.last_name && !bypassGracePeriod && (
+        <LastNameWarning 
+          lastName={formData.last_name} 
+          assistancePeriod={assistancePeriod}
+          onBypassGracePeriod={onBypassGracePeriod}
+        />
       )}
 
       {/* Personal Information */}

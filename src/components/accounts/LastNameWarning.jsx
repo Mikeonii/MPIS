@@ -5,8 +5,20 @@ import { useTheme } from '@/components/ui/ThemeContext';
 import { cn } from '@/lib/utils';
 import { AlertCircle, Clock } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-export default function LastNameWarning({ lastName, assistancePeriod = 90 }) {
+export default function LastNameWarning({ lastName, assistancePeriod = 90, onBypassGracePeriod }) {
+  const [showBypassDialog, setShowBypassDialog] = useState(false);
   const { darkMode, currentTheme } = useTheme();
   const [warningData, setWarningData] = useState(null);
 
@@ -66,26 +78,34 @@ export default function LastNameWarning({ lastName, assistancePeriod = 90 }) {
     }
   }, [lastName, accounts, assistances, assistancePeriod]);
 
+  const handleBypass = () => {
+    setShowBypassDialog(false);
+    if (onBypassGracePeriod) {
+      onBypassGracePeriod();
+    }
+  };
+
   if (!warningData) return null;
 
   return (
-    <div className={cn(
-      "rounded-xl border p-4 mb-6 animate-in fade-in slide-in-from-top-2 duration-300",
-      warningData.daysRemaining > 0
-        ? darkMode 
-          ? "bg-amber-900/20 border-amber-700/50" 
-          : "bg-amber-50 border-amber-200"
-        : darkMode
-          ? "bg-green-900/20 border-green-700/50"
-          : "bg-green-50 border-green-200"
-    )}>
-      <div className="flex items-start gap-3">
-        {warningData.daysRemaining > 0 ? (
-          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-        ) : (
-          <Clock className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-        )}
-        <div className="flex-1">
+    <>
+      <div className={cn(
+        "rounded-xl border p-4 mb-6 animate-in fade-in slide-in-from-top-2 duration-300",
+        warningData.daysRemaining > 0
+          ? darkMode 
+            ? "bg-amber-900/20 border-amber-700/50" 
+            : "bg-amber-50 border-amber-200"
+          : darkMode
+            ? "bg-green-900/20 border-green-700/50"
+            : "bg-green-50 border-green-200"
+      )}>
+        <div className="flex items-start gap-3">
+          {warningData.daysRemaining > 0 ? (
+            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          ) : (
+            <Clock className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+          )}
+          <div className="flex-1">
           <div className={cn(
             "font-semibold mb-1",
             warningData.daysRemaining > 0

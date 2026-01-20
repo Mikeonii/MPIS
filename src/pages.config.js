@@ -3,8 +3,9 @@ import AccountView from './pages/AccountView';
 import Accounts from './pages/Accounts';
 import Dashboard from './pages/Dashboard';
 import Pharmacies from './pages/Pharmacies';
-import Settings from './pages/Settings';
 import Reports from './pages/Reports';
+import Settings from './pages/Settings';
+import BarangayReports from './pages/BarangayReports';
 import __Layout from './Layout.jsx';
 
 
@@ -14,8 +15,9 @@ export const PAGES = {
     "Accounts": Accounts,
     "Dashboard": Dashboard,
     "Pharmacies": Pharmacies,
-    "Settings": Settings,
     "Reports": Reports,
+    "Settings": Settings,
+    "BarangayReports": BarangayReports,
 }
 
 export const pagesConfig = {

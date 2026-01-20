@@ -1,7 +1,21 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { base44 } from '@/api/base44Client';
 
 export default function GeneralIntakeSheet({ account, familyMembers = [], assistances = [] }) {
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (e) {
+        console.log('User not logged in');
+      }
+    };
+    loadUser();
+  }, []);
   const calculateAge = (birthdate) => {
     if (!birthdate) return '';
     const today = new Date();
@@ -38,13 +52,13 @@ export default function GeneralIntakeSheet({ account, familyMembers = [], assist
   return (
     <div className="print-content bg-white text-black p-8 max-w-[8.5in] mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10pt' }}>
       {/* Header with Logo */}
-      <div className="flex items-center gap-4 mb-4">
+      <div className="flex flex-col items-center gap-2 mb-4">
         <img 
           src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/696dc38131ba35d0783e445b/2d46c5743_image.png"
           alt="Madrid Seal"
-          className="w-20 h-20 rounded-full object-cover flex-shrink-0"
+          className="w-20 h-20 rounded-full object-cover"
         />
-        <div className="text-left flex-1">
+        <div className="text-center">
           <p className="text-xs">Republic of the Philippines</p>
           <p className="text-xs">Province of Surigao del Sur</p>
           <p className="text-xs font-bold">MUNICIPALITY OF MADRID</p>
@@ -248,7 +262,7 @@ export default function GeneralIntakeSheet({ account, familyMembers = [], assist
           </div>
           <div className="text-center">
             <div className="border-b border-black mb-1 pt-4"></div>
-            <p className="font-bold">JUDY ANN P. CORREOS, RSW</p>
+            <p className="font-bold">{currentUser?.full_name?.toUpperCase() || 'N/A'}{currentUser?.position ? `, ${currentUser.position}` : ''}</p>
           </div>
         </div>
       </div>
