@@ -14,6 +14,7 @@ export default function BarangayReports() {
   const { darkMode, currentTheme } = useTheme();
   const { t } = useLanguage();
   const [expandedBarangay, setExpandedBarangay] = useState(null);
+  const [printExpanded, setPrintExpanded] = useState(false);
 
   const { data: accounts = [], isLoading: accountsLoading } = useQuery({
     queryKey: ['accounts'],
@@ -80,6 +81,79 @@ export default function BarangayReports() {
 
   return (
     <div className="space-y-6">
+      <style>{`
+        @media print {
+          body { margin: 0; padding: 20px; background: white !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          .print-table { width: 100%; border-collapse: collapse; font-size: 9pt; margin-top: 15px; }
+          .print-table th { background: #f5f5f5; padding: 8px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #ddd; font-size: 8pt; text-transform: uppercase; color: #666; }
+          .print-table td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 9pt; }
+          .print-header { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #333; }
+          .print-header h1 { margin: 0; font-size: 18pt; font-weight: 700; color: #333; }
+          .print-header p { margin: 5px 0 0 0; font-size: 9pt; color: #666; }
+          .print-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+          .print-summary-card { padding: 12px; background: #f9f9f9; border-left: 3px solid #333; }
+          .print-summary-card .label { font-size: 8pt; color: #666; text-transform: uppercase; margin-bottom: 4px; }
+          .print-summary-card .value { font-size: 16pt; font-weight: 700; color: #333; }
+          .print-barangay { margin-bottom: 25px; page-break-inside: avoid; }
+          .print-barangay-header { background: #f5f5f5; padding: 10px 12px; margin-bottom: 10px; border-left: 4px solid #333; }
+          .print-barangay-header h2 { margin: 0; font-size: 14pt; font-weight: 700; color: #333; }
+          .print-barangay-header p { margin: 3px 0 0 0; font-size: 8pt; color: #666; }
+        }
+      `}</style>
+
+      {/* Print Version */}
+      <div className="print-only">
+        <div className="print-header">
+          <h1>Barangay Assistance Reports</h1>
+          <p>Generated on {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        </div>
+
+        <div className="print-summary">
+          <div className="print-summary-card">
+            <div className="label">Total Barangays</div>
+            <div className="value">{sortedBarangays.length}</div>
+          </div>
+          <div className="print-summary-card">
+            <div className="label">Total Assistance</div>
+            <div className="value">₱{grandTotalAssistance.toLocaleString()}</div>
+          </div>
+          <div className="print-summary-card">
+            <div className="label">Total Count</div>
+            <div className="value">{grandTotalCount}</div>
+          </div>
+        </div>
+
+        {sortedBarangays.map((brgyData, index) => (
+          <div key={brgyData.barangay} className="print-barangay">
+            <div className="print-barangay-header">
+              <h2>#{index + 1} - {brgyData.barangay}</h2>
+              <p>{brgyData.accounts.length} accounts • {brgyData.assistanceCount} assistances • ₱{brgyData.totalAssistance.toLocaleString()}</p>
+            </div>
+            <table className="print-table">
+              <thead>
+                <tr>
+                  <th>Account Name</th>
+                  <th style={{ textAlign: 'right' }}>Total Assistance</th>
+                  <th style={{ textAlign: 'center' }}>Assistances</th>
+                </tr>
+              </thead>
+              <tbody>
+                {brgyData.accounts.map((account) => (
+                  <tr key={account.id}>
+                    <td>{getFullName(account)}</td>
+                    <td style={{ textAlign: 'right', fontWeight: '600' }}>₱{account.totalAssistance.toLocaleString()}</td>
+                    <td style={{ textAlign: 'center' }}>{account.assistanceCount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </div>
+
+      {/* Screen Version */}
+      <div className="no-print">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -335,6 +409,7 @@ export default function BarangayReports() {
             </GlassCard>
           ))
         )}
+      </div>
       </div>
     </div>
   );

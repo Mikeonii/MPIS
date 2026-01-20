@@ -163,6 +163,100 @@ export default function FlexibleReports() {
 
   return (
     <div className="space-y-6">
+      <style>{`
+        @media print {
+          body { margin: 0; padding: 20px; background: white !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          .print-table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+          .print-table th { background: #f5f5f5; padding: 8px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #ddd; font-size: 8pt; text-transform: uppercase; color: #666; }
+          .print-table td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 9pt; }
+          .print-table tr:hover { background: #fafafa; }
+          .print-header { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #333; }
+          .print-header h1 { margin: 0; font-size: 18pt; font-weight: 700; color: #333; }
+          .print-header p { margin: 5px 0 0 0; font-size: 9pt; color: #666; }
+          .print-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+          .print-summary-card { padding: 12px; background: #f9f9f9; border-left: 3px solid #333; }
+          .print-summary-card .label { font-size: 8pt; color: #666; text-transform: uppercase; margin-bottom: 4px; }
+          .print-summary-card .value { font-size: 16pt; font-weight: 700; color: #333; }
+          .print-filters { margin-bottom: 15px; padding: 10px; background: #f5f5f5; border-radius: 4px; font-size: 8pt; }
+          .print-filters strong { font-weight: 600; }
+        }
+      `}</style>
+
+      {/* Print Version */}
+      <div className="print-only">
+        <div className="print-header">
+          <h1>Flexible Reports</h1>
+          <p>Generated on {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        </div>
+
+        {activeFiltersCount > 0 && (
+          <div className="print-filters">
+            <strong>Active Filters:</strong>{' '}
+            {filters.assistanceType && `Type: ${filters.assistanceType}`}
+            {filters.medicalSubcategory && `, Subcategory: ${filters.medicalSubcategory}`}
+            {filters.medicine && `, Medicine: ${filters.medicine}`}
+            {filters.barangay && `, Barangay: ${filters.barangay}`}
+            {filters.dateFrom && `, From: ${new Date(filters.dateFrom).toLocaleDateString()}`}
+            {filters.dateTo && `, To: ${new Date(filters.dateTo).toLocaleDateString()}`}
+            {filters.sourceOfFunds && `, Source: ${sources.find(s => s.id === filters.sourceOfFunds)?.source_name}`}
+            {filters.targetSector && `, Sector: ${filters.targetSector}`}
+            {filters.subCategory && `, Sub: ${filters.subCategory}`}
+          </div>
+        )}
+
+        <div className="print-summary">
+          <div className="print-summary-card">
+            <div className="label">Total Records</div>
+            <div className="value">{filteredResults.length}</div>
+          </div>
+          <div className="print-summary-card">
+            <div className="label">Total Amount</div>
+            <div className="value">₱{totalAmount.toLocaleString()}</div>
+          </div>
+          <div className="print-summary-card">
+            <div className="label">Unique Accounts</div>
+            <div className="value">{new Set(filteredResults.map(r => r.account_id)).size}</div>
+          </div>
+        </div>
+
+        <table className="print-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Account Name</th>
+              <th>Barangay</th>
+              <th>Type</th>
+              <th>Details</th>
+              <th style={{ textAlign: 'right' }}>Amount</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredResults.map((result) => (
+              <tr key={result.id}>
+                <td>{result.date_rendered ? new Date(result.date_rendered).toLocaleDateString() : 'N/A'}</td>
+                <td>{getFullName(result.account)}</td>
+                <td>{result.account?.barangay || 'N/A'}</td>
+                <td>{result.type_of_assistance}</td>
+                <td>
+                  {result.medical_subcategory || '-'}
+                  {result.medicines && result.medicines.length > 0 && (
+                    <div style={{ fontSize: '8pt', color: '#666', marginTop: '2px' }}>
+                      {result.medicines.join(', ')}
+                    </div>
+                  )}
+                </td>
+                <td style={{ textAlign: 'right', fontWeight: '600' }}>₱{(result.amount || 0).toLocaleString()}</td>
+                <td>{result.source_of_funds_name || 'N/A'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Screen Version */}
+      <div className="no-print">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -181,7 +275,7 @@ export default function FlexibleReports() {
         </div>
         <Button
           onClick={() => window.print()}
-          className="no-print text-white"
+          className="text-white"
           style={{ backgroundColor: currentTheme.primary }}
         >
           <Printer className="w-4 h-4 mr-2" />
@@ -463,6 +557,7 @@ export default function FlexibleReports() {
           </table>
         </div>
       </GlassCard>
+      </div>
     </div>
   );
 }
