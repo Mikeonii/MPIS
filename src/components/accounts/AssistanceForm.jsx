@@ -30,6 +30,8 @@ export default function AssistanceForm({
 
   const [localAssistances, setLocalAssistances] = useState([{ 
     type_of_assistance: '', 
+    medical_subcategory: '',
+    medicines: [],
     interviewed_by: '', 
     interviewed_by_position: '',
     amount: '', 
@@ -39,6 +41,9 @@ export default function AssistanceForm({
     source_of_funds_name: '',
     date_rendered: new Date().toISOString().split('T')[0]
   }]);
+  
+  const [medicineInput, setMedicineInput] = useState({});
+  const [suggestedMedicines, setSuggestedMedicines] = useState([]);
 
   const { data: pharmacies = [] } = useQuery({
     queryKey: ['pharmacies'],
@@ -49,6 +54,22 @@ export default function AssistanceForm({
     queryKey: ['sourceOfFunds'],
     queryFn: () => base44.entities.SourceOfFunds.filter({ status: 'Active' }),
   });
+
+  const { data: allAssistances = [] } = useQuery({
+    queryKey: ['allAssistances'],
+    queryFn: () => base44.entities.Assistance.list(),
+  });
+
+  // Extract unique medicines from all assistances
+  useEffect(() => {
+    const medicines = new Set();
+    allAssistances.forEach(a => {
+      if (a.medicines && Array.isArray(a.medicines)) {
+        a.medicines.forEach(m => medicines.add(m));
+      }
+    });
+    setSuggestedMedicines(Array.from(medicines).sort());
+  }, [allAssistances]);
 
   const { data: account } = useQuery({
     queryKey: ['account', accountId],
@@ -155,7 +176,9 @@ export default function AssistanceForm({
     setLocalAssistances(prev => [
       ...prev, 
       { 
-        type_of_assistance: '', 
+        type_of_assistance: '',
+        medical_subcategory: '',
+        medicines: [],
         interviewed_by: user?.full_name || user?.email || '', 
         interviewed_by_position: user?.position || '',
         amount: '', 
@@ -166,6 +189,26 @@ export default function AssistanceForm({
         date_rendered: new Date().toISOString().split('T')[0]
       }
     ]);
+  };
+
+  const addMedicine = (index, medicine) => {
+    if (!medicine.trim()) return;
+    setLocalAssistances(prev => {
+      const updated = [...prev];
+      if (!updated[index].medicines.includes(medicine)) {
+        updated[index].medicines = [...updated[index].medicines, medicine];
+      }
+      return updated;
+    });
+    setMedicineInput({ ...medicineInput, [index]: '' });
+  };
+
+  const removeMedicine = (index, medicineToRemove) => {
+    setLocalAssistances(prev => {
+      const updated = [...prev];
+      updated[index].medicines = updated[index].medicines.filter(m => m !== medicineToRemove);
+      return updated;
+    });
   };
 
   const removeAssistance = (index) => {
@@ -369,6 +412,10 @@ export default function AssistanceForm({
                     <SelectItem value="Medical">{t('medical')}</SelectItem>
                     <SelectItem value="Funeral">{t('funeral')}</SelectItem>
                     <SelectItem value="Cash Assistance">{t('cashAssistance')}</SelectItem>
+                    <SelectItem value="Logistics">Logistics</SelectItem>
+                    <SelectItem value="TUPAD">TUPAD</SelectItem>
+                    <SelectItem value="AICS">AICS</SelectItem>
+                    <SelectItem value="GIP">GIP</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -395,17 +442,25 @@ export default function AssistanceForm({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div>
-                <Label className={labelClasses}>{t('interviewedBy')}</Label>
-                <Input
-                  value={assistance.interviewed_by}
-                  onChange={(e) => updateAssistance(index, 'interviewed_by', e.target.value)}
-                  className={inputClasses}
-                />
-              </div>
-              
-              {assistance.type_of_assistance === 'Medical' && (
+            {assistance.type_of_assistance === 'Medical' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <Label className={labelClasses}>Medical Subcategory</Label>
+                  <Select 
+                    value={assistance.medical_subcategory} 
+                    onValueChange={(v) => updateAssistance(index, 'medical_subcategory', v)}
+                  >
+                    <SelectTrigger className={inputClasses}>
+                      <SelectValue placeholder="Select Subcategory" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Medicines">Medicines</SelectItem>
+                      <SelectItem value="Hospital Bill">Hospital Bill</SelectItem>
+                      <SelectItem value="Laboratories">Laboratories</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 <div>
                   <Label className={labelClasses}>{t('pharmacyName')}</Label>
                   <Select 
@@ -424,26 +479,118 @@ export default function AssistanceForm({
                     </SelectContent>
                   </Select>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            <div className="mt-4">
-              <Label className={labelClasses}>Source of Funds *</Label>
-              <Select 
-                value={assistance.source_of_funds_id} 
-                onValueChange={(v) => updateAssistance(index, 'source_of_funds_id', v)}
-              >
-                <SelectTrigger className={inputClasses}>
-                  <SelectValue placeholder="Select Source of Funds" />
-                </SelectTrigger>
-                <SelectContent>
-                  {fundsources.map(source => (
-                    <SelectItem key={source.id} value={source.id}>
-                      {source.source_name} - ₱{source.amount_remaining.toLocaleString()} available
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {assistance.type_of_assistance === 'Medical' && assistance.medical_subcategory === 'Medicines' && (
+              <div className="mt-4">
+                <Label className={labelClasses}>Medicines List</Label>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      value={medicineInput[index] || ''}
+                      onChange={(e) => setMedicineInput({ ...medicineInput, [index]: e.target.value })}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addMedicine(index, medicineInput[index]);
+                        }
+                      }}
+                      placeholder="Type medicine name..."
+                      className={inputClasses}
+                      list={`medicine-suggestions-${index}`}
+                    />
+                    <datalist id={`medicine-suggestions-${index}`}>
+                      {suggestedMedicines.map((med, i) => (
+                        <option key={i} value={med} />
+                      ))}
+                    </datalist>
+                    <Button
+                      type="button"
+                      onClick={() => addMedicine(index, medicineInput[index])}
+                      className="text-white"
+                      style={{ backgroundColor: currentTheme.primary }}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                  
+                  {suggestedMedicines.length > 0 && medicineInput[index] && (
+                    <div className={cn(
+                      "flex flex-wrap gap-1 p-2 rounded-lg max-h-20 overflow-y-auto",
+                      darkMode ? "bg-gray-800" : "bg-gray-50"
+                    )}>
+                      {suggestedMedicines
+                        .filter(m => m.toLowerCase().includes(medicineInput[index]?.toLowerCase() || ''))
+                        .slice(0, 10)
+                        .map((med, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => addMedicine(index, med)}
+                            className={cn(
+                              "px-2 py-1 text-xs rounded-md transition-colors",
+                              darkMode 
+                                ? "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                                : "bg-white hover:bg-gray-100 text-gray-700"
+                            )}
+                          >
+                            {med}
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {assistance.medicines.map((med, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm text-white"
+                        style={{ backgroundColor: currentTheme.primary }}
+                      >
+                        <span>{med}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeMedicine(index, med)}
+                          className="hover:opacity-75"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <Label className={labelClasses}>{t('interviewedBy')}</Label>
+                <Input
+                  value={assistance.interviewed_by}
+                  onChange={(e) => updateAssistance(index, 'interviewed_by', e.target.value)}
+                  className={inputClasses}
+                />
+              </div>
+              
+              <div>
+                <Label className={labelClasses}>Source of Funds *</Label>
+                <Select 
+                  value={assistance.source_of_funds_id} 
+                  onValueChange={(v) => updateAssistance(index, 'source_of_funds_id', v)}
+                >
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue placeholder="Select Source of Funds" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fundsources.map(source => (
+                      <SelectItem key={source.id} value={source.id}>
+                        {source.source_name} - ₱{source.amount_remaining.toLocaleString()} available
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         ))}
