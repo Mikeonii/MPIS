@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/components/ui/ThemeContext';
 import { useLanguage } from '@/components/ui/LanguageContext';
@@ -21,6 +20,8 @@ const SUB_CATEGORIES = [
   "Indigenous People", 
   "Recovering Person who used drugs", 
   "4PS DSWD Beneficiary", 
+  "Tupad Beneficiary",
+  "DSWD AICS Beneficiary",
   "Street Dwellers", 
   "Psychosocial/Mental/Orthopedic Disability", 
   "WEDC", 
@@ -70,9 +71,9 @@ export default function AccountForm({
     barangay: '',
     city_municipality: 'Madrid',
     city_municipality_code: '',
-    district: '1st District',
-    province: '168500000',
-    region: '160000000',
+    district: '1st',
+    province: 'Surigao del Sur',
+    region: 'Caraga',
     mobile_number: '',
     birthdate: '',
     gender: '',
@@ -90,9 +91,9 @@ export default function AccountForm({
     rep_barangay: '',
     rep_city_municipality: 'Madrid',
     rep_city_municipality_code: '',
-    rep_district: '1st District',
-    rep_province: '168500000',
-    rep_region: '160000000',
+    rep_district: '1st',
+    rep_province: 'Surigao del Sur',
+    rep_region: 'Caraga',
     rep_mobile_number: '',
     rep_birthdate: '',
     rep_gender: '',
@@ -353,7 +354,13 @@ export default function AccountForm({
                 <Input
                   type="date"
                   value={formData.birthdate}
-                  onChange={(e) => handleChange('birthdate', e.target.value)}
+                  onChange={(e) => {
+                    handleChange('birthdate', e.target.value);
+                    const age = calculateAge(e.target.value);
+                    if (age >= 18 && age <= 59) {
+                      handleChange('target_sector', 'FHONA');
+                    }
+                  }}
                   className={inputClasses}
                   required
                 />
@@ -364,6 +371,12 @@ export default function AccountForm({
                   value={calculateAge(formData.birthdate) ? `${calculateAge(formData.birthdate)} ${t('yearsOld')}` : ''}
                   className={inputClasses}
                   disabled
+                  onChange={(e) => {
+                    const age = calculateAge(formData.birthdate);
+                    if (age >= 18 && age <= 59 && !formData.target_sector) {
+                      handleChange('target_sector', 'FHONA');
+                    }
+                  }}
                 />
               </div>
               <div>
@@ -485,101 +498,35 @@ export default function AccountForm({
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <Label className={labelClasses}>{t('region')}</Label>
-                <Select
-                  value={formData.region}
-                  onValueChange={(value) => {
-                    handleChange('region', value);
-                    handleChange('province', '');
-                    handleChange('city_municipality', '');
-                    handleChange('city_municipality_code', '');
-                    handleChange('district', '');
-                  }}
-                >
-                  <SelectTrigger className={inputClasses}>
-                    <SelectValue placeholder="Select region" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {loadingLocations ? (
-                      <SelectItem value="loading" disabled>Loading...</SelectItem>
-                    ) : regions.length > 0 ? (
-                      regions.map(region => (
-                        <SelectItem key={region.code} value={region.code}>
-                          {region.name}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="160000000">Caraga</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
+                <Input
+                  value="Caraga"
+                  className={inputClasses}
+                  disabled
+                />
               </div>
               <div>
                 <Label className={labelClasses}>{t('province')}</Label>
-                <Select
-                  value={formData.province}
-                  onValueChange={(value) => {
-                    handleChange('province', value);
-                    handleChange('city_municipality', '');
-                    handleChange('city_municipality_code', '');
-                    handleChange('district', '');
-                  }}
-                  disabled={!formData.region}
-                >
-                  <SelectTrigger className={inputClasses}>
-                    <SelectValue placeholder="Select province" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {provinces.map(province => (
-                      <SelectItem key={province.code} value={province.code}>
-                        {province.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  value="Surigao del Sur"
+                  className={inputClasses}
+                  disabled
+                />
               </div>
               <div>
                 <Label className={labelClasses}>{t('cityMunicipality')}</Label>
-                <Select
-                  value={formData.city_municipality}
-                  onValueChange={(value) => {
-                    const selectedCity = cities.find(city => city.name === value);
-                    handleChange('city_municipality', value);
-                    handleChange('city_municipality_code', selectedCity ? selectedCity.code : '');
-                    
-                    if (value === 'Madrid') {
-                      handleChange('district', '1st District');
-                    } else {
-                      handleChange('district', '');
-                    }
-                  }}
-                  disabled={!formData.province}
-                >
-                  <SelectTrigger className={inputClasses}>
-                    <SelectValue placeholder="Select city/municipality" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cities.map((city, idx) => (
-                      <SelectItem key={city.code || idx} value={city.name}>
-                        {city.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  value="Madrid"
+                  className={inputClasses}
+                  disabled
+                />
               </div>
               <div>
                 <Label className={labelClasses}>{t('district')}</Label>
-                <Select
-                  value={formData.district}
-                  onValueChange={(value) => handleChange('district', value)}
-                >
-                  <SelectTrigger className={inputClasses}>
-                    <SelectValue placeholder="Select district" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1st District">1st District</SelectItem>
-                    <SelectItem value="2nd District">2nd District</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  value="1st"
+                  className={inputClasses}
+                  disabled
+                />
               </div>
             </div>
           </div>
@@ -721,7 +668,7 @@ export default function AccountForm({
                 </Select>
               </div>
               <div>
-                <Label className={labelClasses}>{t('subCategory')}</Label>
+                <Label className={labelClasses}>{t('subCategory')} (Optional)</Label>
                 <Select 
                   value={formData.sub_category} 
                   onValueChange={(v) => handleChange('sub_category', v)}

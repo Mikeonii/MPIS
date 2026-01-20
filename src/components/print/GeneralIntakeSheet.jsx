@@ -232,63 +232,40 @@ export default function GeneralIntakeSheet({ account, familyMembers = [], assist
       </table>
 
       {/* Types of Assistance */}
-      <div className="grid grid-cols-2 gap-2 mb-2 text-xs">
-        <div className="border border-black p-2">
-          <p><strong>Financial Assistance:</strong></p>
-          <label><input type="checkbox" /> Medical</label><br/>
-          <label><input type="checkbox" /> Burial</label><br/>
-          <label><input type="checkbox" /> Funeral</label><br/>
-          <label><input type="checkbox" /> Transportation</label><br/>
-          <label><input type="checkbox" /> Educational</label><br/>
-          <label><input type="checkbox" /> Cash Assistance for</label>
+      <div className="mb-2">
+        <div className="bg-yellow-400 py-1 px-2 mb-1 border border-black">
+          <p className="text-xs font-bold">Types of Assistance</p>
         </div>
-        <div className="border border-black p-2">
-          <p><strong>Material Assistance:</strong></p>
-          <label><input type="checkbox" /> Family Food Packs</label><br/>
-          <label><input type="checkbox" /> Other Food Items</label><br/>
-          <label><input type="checkbox" /> Hygiene and Sleeping Kits</label><br/>
-          <label><input type="checkbox" /> Assistive Device & Technologies</label><br/>
-          <p className="mt-1"><strong>Psychosocial Support:</strong></p>
-          <label><input type="checkbox" /> Psychological First Aid</label><br/>
-          <label><input type="checkbox" /> Social Work Counseling</label>
-        </div>
+        <table className="w-full text-xs border-collapse">
+          <thead>
+            <tr className="border border-black">
+              <th className="border border-black p-1">Type</th>
+              <th className="border border-black p-1">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {assistances.slice(0, 3).map((assistance, index) => (
+              <tr key={index} className="border border-black">
+                <td className="border border-black p-1">{assistance.type_of_assistance}</td>
+                <td className="border border-black p-1">₱{(assistance.amount || 0).toLocaleString()}</td>
+              </tr>
+            ))}
+            {[...Array(Math.max(0, 3 - assistances.length))].map((_, i) => (
+              <tr key={`empty-assist-${i}`} className="border border-black">
+                <td className="border border-black p-1" style={{height: '20px'}}>&nbsp;</td>
+                <td className="border border-black p-1"></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-
-      {/* Provided/Amount/Fund Source Table */}
-      <table className="w-full text-xs border-collapse mb-4">
-        <thead>
-          <tr className="bg-yellow-400 border border-black">
-            <th className="border border-black p-1">Provided</th>
-            <th className="border border-black p-1">Amount</th>
-            <th className="border border-black p-1">Fund Source</th>
-          </tr>
-        </thead>
-        <tbody>
-          {assistances.slice(0, 3).map((assistance, index) => (
-            <tr key={index} className="border border-black">
-              <td className="border border-black p-1">{assistance.type_of_assistance}</td>
-              <td className="border border-black p-1">₱{(assistance.amount || 0).toLocaleString()}</td>
-              <td className="border border-black p-1"></td>
-            </tr>
-          ))}
-          {[...Array(Math.max(0, 3 - assistances.length))].map((_, i) => (
-            <tr key={`empty-assist-${i}`} className="border border-black">
-              <td className="border border-black p-1" style={{height: '20px'}}>&nbsp;</td>
-              <td className="border border-black p-1"></td>
-              <td className="border border-black p-1"></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
 
       {/* Footer Section */}
       <div className="grid grid-cols-2 gap-4 text-xs">
         <div className="border border-black p-4">
-          <p className="text-[8pt] mb-8">I hereby affirm that the information provided herein are true and correct to the best of my knowledge and consent. I also 
-          CONSENT / do not CONSENT to enabling data users with any signatures of the Republic of the Philippines 
-          pertaining to the implementation of RA 11032 or the Ease of Doing Business and Efficient Government Service 
-          Delivery Act of 2018 to collect, use, share, disclose and process the data indicated herein including sensitive 
-          personal information for SPPAO-FO government including affiliated agencies and cause the filing of appropriate cases.</p>
+          <p className="text-[8pt] mb-8">
+            I certify that the information provided is true and correct and that I authorize the Municipal Social Welfare and Development Office (MSWDO) and Madrid Palamboon Center (MPC) to collect and process my personal data solely for the purpose of evaluating and providing medical assistance in kind under the Program, in compliance with Republic Act No. 10173 (Data Privacy Act of 2012). I understand that this assistance is in the form of medicines/medical supplies only and is not convertible to cash.
+          </p>
           <div className="text-center">
             <div className="border-b border-black mb-1 pt-8"></div>
             <p className="font-bold">Buong Pangalan at Pirma</p>

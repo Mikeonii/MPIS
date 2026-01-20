@@ -180,8 +180,8 @@ export default function AssistanceForm({
     });
   };
 
-  const handleSubmit = () => {
-    if (!canAddAssistance) {
+  const handleSubmit = (bypassCheck = false) => {
+    if (!bypassCheck && !canAddAssistance) {
       setShowIneligibilityDialog(true);
       return;
     }
@@ -260,12 +260,22 @@ export default function AssistanceForm({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowIneligibilityDialog(false);
+                handleSubmit(true);
+              }}
+              className="mr-2"
+            >
+              Proceed Anyway
+            </Button>
             <AlertDialogAction
               onClick={() => setShowIneligibilityDialog(false)}
               className="text-white"
               style={{ backgroundColor: currentTheme.primary }}
             >
-              Understood
+              Cancel
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

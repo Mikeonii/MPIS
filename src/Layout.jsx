@@ -16,7 +16,8 @@ import {
   Sun,
   Moon,
   Languages,
-  Palette
+  Palette,
+  FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -43,6 +44,7 @@ function LayoutContent({ children, currentPageName }) {
     { name: 'Dashboard', icon: LayoutDashboard, label: t('dashboard') },
     { name: 'Accounts', icon: Users, label: t('accounts') },
     { name: 'Pharmacies', icon: Pill, label: t('pharmacies') },
+    { name: 'Reports', icon: FileText, label: 'Reports' },
     { name: 'Settings', icon: Settings, label: t('settings') },
   ];
 
