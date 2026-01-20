@@ -12,97 +12,92 @@ export default function CertificateOfEligibility({ account, assistance, currentU
 
   const getFullAddress = (data, prefix = '') => {
     const parts = [
-      data[`${prefix}house_number`],
-      data[`${prefix}street`],
       data[`${prefix}purok`] ? `Purok ${data[`${prefix}purok`]}` : '',
-      data[`${prefix}barangay`]
+      data[`${prefix}barangay`],
+      data[`${prefix}city_municipality`],
+      data[`${prefix}province`]
     ].filter(Boolean);
     return parts.join(', ');
   };
 
-  const primaryColor = '#007AFF';
+  const issueDate = new Date(assistance?.date_rendered || new Date());
 
   return (
-    <div className="print-content bg-white text-black p-8 max-w-[8.5in] mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '11pt' }}>
-      {/* Decorative Header Border */}
-      <div className="border-4 p-6" style={{ borderColor: primaryColor }}>
-        {/* Header with Logo */}
-        <div className="flex items-center justify-center gap-4 mb-4 pb-4 border-b-2" style={{ borderColor: primaryColor }}>
-          <img 
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/696dc38131ba35d0783e445b/2d46c5743_image.png"
-            alt="Madrid Seal"
-            className="object-contain"
-            style={{ width: '120px', height: '120px' }}
-          />
+    <div className="print-content bg-white text-black p-6 max-w-[8.5in] mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10pt', height: '5.5in' }}>
+      {/* Header */}
+      <div className="flex items-start gap-3 mb-4 pb-3 border-b-2 border-gray-800">
+        <img 
+          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/696dc38131ba35d0783e445b/2d46c5743_image.png"
+          alt="Madrid Seal"
+          className="object-contain"
+          style={{ width: '60px', height: '60px' }}
+        />
+        <div className="flex-1">
+          <p className="text-xs text-gray-600 leading-tight">Republic of the Philippines</p>
+          <p className="text-xs text-gray-600 leading-tight">Province of Surigao del Sur</p>
+          <p className="text-sm font-bold text-gray-900 mt-0.5">MUNICIPALITY OF MADRID</p>
+          <p className="text-xs font-semibold text-gray-700">Madrid Palamboon Center</p>
+        </div>
+        <div className="text-right text-xs text-gray-600">
+          <p>Form 3</p>
+          <p className="font-semibold mt-1">{format(issueDate, 'MMM d, yyyy')}</p>
+        </div>
+      </div>
+
+      {/* Title */}
+      <div className="text-center mb-4">
+        <h1 className="text-lg font-bold text-gray-900 uppercase tracking-wide">Certificate of Eligibility</h1>
+        <p className="text-xs text-gray-600 mt-1">Medical Assistance in Kind</p>
+      </div>
+
+      {/* Content */}
+      <div className="space-y-3 text-sm leading-relaxed">
+        <p className="text-justify">
+          This is to certify that <strong className="font-semibold">{getFullName(account)}</strong> of {getFullAddress(account)} has been assessed and found eligible to receive medical assistance in kind from the Madrid Palamboon Center.
+        </p>
+
+        <div className="bg-gray-50 p-3 border-l-4 border-gray-800">
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-xs text-gray-600 mb-0.5">Amount Approved</p>
+              <p className="font-bold text-lg text-gray-900">₱ {(assistance?.amount || 0).toLocaleString()}</p>
+              <p className="text-xs text-gray-500 mt-0.5">(Maximum ₱5,000)</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-600 mb-0.5">Assistance Type</p>
+              <p className="font-semibold text-gray-900">{assistance?.type_of_assistance || 'Medical'}</p>
+              {assistance?.medical_subcategory && (
+                <p className="text-xs text-gray-600 mt-0.5">{assistance.medical_subcategory}</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {assistance?.medicines && assistance.medicines.length > 0 && (
+          <div className="bg-blue-50 p-3 border-l-4 border-blue-400">
+            <p className="text-xs font-semibold text-gray-700 mb-1">Medicines Requested:</p>
+            <div className="text-xs text-gray-700 leading-relaxed">
+              {assistance.medicines.join(', ')}
+            </div>
+          </div>
+        )}
+
+        <p className="text-xs text-gray-600 italic mt-2">
+          This certificate is valid for medical assistance purposes only and subject to verification by authorized personnel.
+        </p>
+      </div>
+
+      {/* Signature */}
+      <div className="mt-6 pt-4 border-t border-gray-300">
+        <div className="flex justify-between items-end">
+          <div className="text-xs text-gray-600">
+            <p>Issued by</p>
+          </div>
           <div className="text-center">
-            <p className="text-xs text-gray-600">Republic of the Philippines</p>
-            <p className="text-xs text-gray-600">Province of Surigao del Sur</p>
-            <p className="text-sm font-bold mt-1" style={{ color: primaryColor }}>MUNICIPALITY OF MADRID</p>
-            <p className="text-xs font-semibold text-gray-700 mt-1">Madrid Palamboon Center</p>
-          </div>
-        </div>
-
-        {/* Title */}
-        <div className="text-center mb-6">
-          <div className="inline-block px-4 py-2 mb-2" style={{ backgroundColor: `${primaryColor}15` }}>
-            <p className="text-xs font-semibold" style={{ color: primaryColor }}>Form 2</p>
-          </div>
-          <h1 className="text-lg font-bold mb-2" style={{ color: primaryColor }}>
-            Certificate of Eligibility for Medical Assistance in Kind
-          </h1>
-          <div className="w-32 h-1 mx-auto mb-4" style={{ backgroundColor: primaryColor }}></div>
-          <h2 className="text-base font-bold text-gray-800">
-            Certificate of Eligibility
-          </h2>
-        </div>
-
-        {/* Body */}
-        <div className="space-y-4 mb-8 px-4" style={{ lineHeight: '1.9' }}>
-          <p className="text-justify">
-            This is to certify that <span className="font-bold px-2 py-1" style={{ backgroundColor: `${primaryColor}10`, borderBottom: `2px solid ${primaryColor}` }}>{getFullName(account)}</span>, 
-            residing at <span className="font-bold px-2 py-1" style={{ backgroundColor: `${primaryColor}10`, borderBottom: `2px solid ${primaryColor}` }}>{getFullAddress(account)}</span>, Municipality of 
-            Madrid, is eligible for Medical Assistance in Kind (Medicines and Medical Supplies) under the 
-            Madrid Palamboon Center Program.
-          </p>
-
-          <p className="text-justify">
-            An amount not exceeding <span className="font-bold text-lg px-3 py-1" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor, borderBottom: `2px solid ${primaryColor}` }}>₱{(assistance?.amount || 0).toLocaleString()}</span> may 
-            be utilized for the purchase of prescribed medicines and/or medically necessary supplies through a Guarantee Letter (GL) 
-            issued by the MSWDO/MPC.
-          </p>
-
-          <div className="p-3 my-4" style={{ backgroundColor: '#FFF8E1', border: '2px solid #FFC107', borderRadius: '4px' }}>
-            <p className="text-justify text-sm">
-              <strong>⚠ Important:</strong> This certificate is valid for three (3) days and is not convertible to cash. Assistance is subject to 
-              fund availability and Program guidelines under Executive Order No. <span className="border-b border-gray-400 px-2">______</span> (Series of 2026).
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 mt-6">
-            <div className="w-2 h-8" style={{ backgroundColor: primaryColor }}></div>
-            <div>
-              <p className="text-xs text-gray-600">Date Issued</p>
-              <p className="font-bold text-sm">{format(new Date(assistance?.date_rendered || new Date()), 'MMMM d, yyyy')}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Signature */}
-        <div className="mt-12 pt-6 border-t-2" style={{ borderColor: `${primaryColor}40` }}>
-          <p className="text-xs text-gray-600 mb-2">Authorized Signatory</p>
-          <p className="font-bold text-sm mb-3">MPC Head or Deputy Designated by MSWDO Head</p>
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <p className="text-xs text-gray-600 mb-1">Name</p>
-              <div className="border-b-2 pb-1" style={{ borderColor: primaryColor }}>
-                <p className="font-bold">{currentUser?.full_name?.toUpperCase() || ''}</p>
-              </div>
-            </div>
-            <div>
-              <p className="text-xs text-gray-600 mb-1">Signature</p>
-              <div className="border-b-2 pb-1" style={{ borderColor: primaryColor, minHeight: '30px' }}>
-              </div>
-            </div>
+            <div className="border-b-2 border-gray-800 w-64 mb-1"></div>
+            <p className="font-semibold text-sm">{currentUser?.full_name?.toUpperCase() || ''}</p>
+            <p className="text-xs text-gray-600">{currentUser?.position || 'Authorized Signatory'}</p>
+            <p className="text-xs text-gray-600">Madrid Palamboon Center</p>
           </div>
         </div>
       </div>
