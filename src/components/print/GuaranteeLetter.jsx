@@ -112,6 +112,17 @@ export default function GuaranteeLetter({ account, assistance, currentUser }) {
           <p className="text-sm">
             For prescription medicines and medically necessary supplies only; <strong>no cash-out, no refund, no substitution of non-medical items.</strong>
           </p>
+          
+          {assistance?.medicines && assistance.medicines.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-blue-200">
+              <p className="font-semibold text-sm mb-2">Medicines Requested:</p>
+              <ul className="text-sm space-y-1 list-disc list-inside ml-2">
+                {assistance.medicines.map((medicine, index) => (
+                  <li key={index}>{medicine}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Conditions Section */}
