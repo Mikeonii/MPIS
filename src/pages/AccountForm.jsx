@@ -30,6 +30,7 @@ export default function AccountFormPage() {
 
   const [showAssistanceDialog, setShowAssistanceDialog] = useState(false);
   const [newAccountId, setNewAccountId] = useState(null);
+  const [bypassGracePeriod, setBypassGracePeriod] = useState(false);
 
   const { data: account } = useQuery({
     queryKey: ['account', accountId],
@@ -150,6 +151,8 @@ export default function AccountFormPage() {
         onSave={handleSave}
         onCancel={handleCancel}
         isLoading={createAccountMutation.isPending || updateAccountMutation.isPending}
+        bypassGracePeriod={bypassGracePeriod}
+        onBypassGracePeriod={() => setBypassGracePeriod(true)}
       />
 
       {/* Add Assistance Dialog */}
