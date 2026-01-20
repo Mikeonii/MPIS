@@ -38,13 +38,13 @@ export default function GeneralIntakeSheet({ account, familyMembers = [], assist
   return (
     <div className="print-content bg-white text-black p-8 max-w-[8.5in] mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10pt' }}>
       {/* Header with Logo */}
-      <div className="flex flex-col items-center gap-2 mb-4">
+      <div className="flex items-center justify-center gap-3 mb-4">
         <img 
           src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/696dc38131ba35d0783e445b/2d46c5743_image.png"
           alt="Madrid Seal"
-          className="w-20 h-20 rounded-full object-cover"
+          className="w-16 h-16 rounded-full object-cover"
         />
-        <div className="text-center">
+        <div className="text-left">
           <p className="text-xs">Republic of the Philippines</p>
           <p className="text-xs">Province of Surigao del Sur</p>
           <p className="text-xs font-bold">MUNICIPALITY OF MADRID</p>
