@@ -231,35 +231,6 @@ export default function GeneralIntakeSheet({ account, familyMembers = [], assist
         </tbody>
       </table>
 
-      {/* Types of Assistance */}
-      <div className="mb-2">
-        <div className="bg-yellow-400 py-1 px-2 mb-1 border border-black">
-          <p className="text-xs font-bold">Types of Assistance</p>
-        </div>
-        <table className="w-full text-xs border-collapse">
-          <thead>
-            <tr className="border border-black">
-              <th className="border border-black p-1">Type</th>
-              <th className="border border-black p-1">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {assistances.slice(0, 3).map((assistance, index) => (
-              <tr key={index} className="border border-black">
-                <td className="border border-black p-1">{assistance.type_of_assistance}</td>
-                <td className="border border-black p-1">₱{(assistance.amount || 0).toLocaleString()}</td>
-              </tr>
-            ))}
-            {[...Array(Math.max(0, 3 - assistances.length))].map((_, i) => (
-              <tr key={`empty-assist-${i}`} className="border border-black">
-                <td className="border border-black p-1" style={{height: '20px'}}>&nbsp;</td>
-                <td className="border border-black p-1"></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
       {/* Footer Section */}
       <div className="grid grid-cols-2 gap-4 text-xs">
         <div className="border border-black p-4">
