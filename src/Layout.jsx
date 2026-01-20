@@ -48,6 +48,7 @@ function LayoutContent({ children, currentPageName }) {
     { name: 'SourceOfFunds', icon: FileText, label: 'Source of Funds', roles: ['admin'] },
     { name: 'FlexibleReports', icon: FileText, label: 'Reports', roles: ['admin'] },
     { name: 'BarangayReports', icon: FileText, label: 'Barangay Reports', roles: ['admin'] },
+    { name: 'Users', icon: Users, label: 'Users', roles: ['admin'] },
     { name: 'Settings', icon: Settings, label: t('settings'), roles: ['admin'] },
   ];
 

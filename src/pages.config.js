@@ -8,6 +8,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import SourceOfFunds from './pages/SourceOfFunds';
 import FlexibleReports from './pages/FlexibleReports';
+import Users from './pages/Users';
 import __Layout from './Layout.jsx';
 
 
@@ -22,6 +23,7 @@ export const PAGES = {
     "Settings": Settings,
     "SourceOfFunds": SourceOfFunds,
     "FlexibleReports": FlexibleReports,
+    "Users": Users,
 }
 
 export const pagesConfig = {
