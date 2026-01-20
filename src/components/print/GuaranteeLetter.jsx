@@ -32,12 +32,13 @@ export default function GuaranteeLetter({ account, assistance, currentUser }) {
       <div className="border-4 p-6" style={{ borderColor: primaryColor }}>
         {/* Header with Logo */}
         <div className="flex items-center justify-center gap-4 mb-4 pb-4 border-b-2" style={{ borderColor: primaryColor }}>
-          <img 
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/696dc38131ba35d0783e445b/2d46c5743_image.png"
-            alt="Madrid Seal"
-            className="w-20 h-20 rounded-full object-cover"
-            style={{ border: `3px solid ${primaryColor}` }}
-          />
+          <div className="w-20 h-20 rounded-full flex items-center justify-center p-2" style={{ border: `3px solid ${primaryColor}`, backgroundColor: 'white' }}>
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/696dc38131ba35d0783e445b/2d46c5743_image.png"
+              alt="Madrid Seal"
+              className="w-full h-full object-contain"
+            />
+          </div>
           <div className="text-center">
             <p className="text-xs text-gray-600">Republic of the Philippines</p>
             <p className="text-xs text-gray-600">Province of Surigao del Sur</p>
