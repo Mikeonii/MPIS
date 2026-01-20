@@ -35,12 +35,19 @@ export default function AssistanceForm({
     amount: '', 
     pharmacy_id: '',
     pharmacy_name: '',
+    source_of_funds_id: '',
+    source_of_funds_name: '',
     date_rendered: new Date().toISOString().split('T')[0]
   }]);
 
   const { data: pharmacies = [] } = useQuery({
     queryKey: ['pharmacies'],
     queryFn: () => base44.entities.Pharmacy.list(),
+  });
+
+  const { data: fundsources = [] } = useQuery({
+    queryKey: ['sourceOfFunds'],
+    queryFn: () => base44.entities.SourceOfFunds.filter({ status: 'Active' }),
   });
 
   const { data: account } = useQuery({
@@ -154,6 +161,8 @@ export default function AssistanceForm({
         amount: '', 
         pharmacy_id: '',
         pharmacy_name: '',
+        source_of_funds_id: '',
+        source_of_funds_name: '',
         date_rendered: new Date().toISOString().split('T')[0]
       }
     ]);
@@ -176,6 +185,12 @@ export default function AssistanceForm({
         updated[index].pharmacy_name = pharmacy?.pharmacy_name || '';
       }
       
+      // If source_of_funds_id changes, update source_of_funds_name
+      if (field === 'source_of_funds_id') {
+        const source = fundsources.find(s => s.id === value);
+        updated[index].source_of_funds_name = source?.source_name || '';
+      }
+      
       return updated;
     });
   };
@@ -186,11 +201,28 @@ export default function AssistanceForm({
       return;
     }
     
-    const validAssistances = localAssistances.filter(a => a.type_of_assistance && a.amount);
+    const validAssistances = localAssistances.filter(a => a.type_of_assistance && a.amount && a.source_of_funds_id);
     
     if (validAssistances.length === 0) {
-      toast.error('Please fill in at least one assistance entry');
+      toast.error('Please fill in all required fields including source of funds');
       return;
+    }
+    
+    // Validate available funds
+    for (const assistance of validAssistances) {
+      const source = fundsources.find(s => s.id === assistance.source_of_funds_id);
+      if (!source) {
+        toast.error('Invalid source of funds selected');
+        return;
+      }
+      
+      const requestedAmount = parseFloat(assistance.amount);
+      if (requestedAmount > source.amount_remaining) {
+        toast.error(
+          `Insufficient funds in "${source.source_name}". Available: ₱${source.amount_remaining.toLocaleString()}, Requested: ₱${requestedAmount.toLocaleString()}`
+        );
+        return;
+      }
     }
     
     onSave(validAssistances);
@@ -393,6 +425,25 @@ export default function AssistanceForm({
                   </Select>
                 </div>
               )}
+            </div>
+
+            <div className="mt-4">
+              <Label className={labelClasses}>Source of Funds *</Label>
+              <Select 
+                value={assistance.source_of_funds_id} 
+                onValueChange={(v) => updateAssistance(index, 'source_of_funds_id', v)}
+              >
+                <SelectTrigger className={inputClasses}>
+                  <SelectValue placeholder="Select Source of Funds" />
+                </SelectTrigger>
+                <SelectContent>
+                  {fundsources.map(source => (
+                    <SelectItem key={source.id} value={source.id}>
+                      {source.source_name} - ₱{source.amount_remaining.toLocaleString()} available
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         ))}
