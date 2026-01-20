@@ -40,15 +40,20 @@ function LayoutContent({ children, currentPageName }) {
     loadUser();
   }, []);
 
-  const navItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, label: t('dashboard') },
-    { name: 'Accounts', icon: Users, label: t('accounts') },
-    { name: 'Pharmacies', icon: Pill, label: t('pharmacies') },
-    { name: 'SourceOfFunds', icon: FileText, label: 'Source of Funds' },
-    { name: 'Reports', icon: FileText, label: 'Account Reports' },
-    { name: 'BarangayReports', icon: FileText, label: 'Barangay Reports' },
-    { name: 'Settings', icon: Settings, label: t('settings') },
+  // Filter navigation items based on user role
+  const allNavItems = [
+    { name: 'Dashboard', icon: LayoutDashboard, label: t('dashboard'), roles: ['admin', 'user'] },
+    { name: 'Accounts', icon: Users, label: t('accounts'), roles: ['admin', 'user'] },
+    { name: 'Pharmacies', icon: Pill, label: t('pharmacies'), roles: ['admin'] },
+    { name: 'SourceOfFunds', icon: FileText, label: 'Source of Funds', roles: ['admin'] },
+    { name: 'FlexibleReports', icon: FileText, label: 'Reports', roles: ['admin'] },
+    { name: 'BarangayReports', icon: FileText, label: 'Barangay Reports', roles: ['admin'] },
+    { name: 'Settings', icon: Settings, label: t('settings'), roles: ['admin'] },
   ];
+
+  const navItems = allNavItems.filter(item => 
+    item.roles.includes(user?.role || 'user')
+  );
 
   const handleLogout = () => {
     base44.auth.logout(window.location.origin);

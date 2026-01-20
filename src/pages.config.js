@@ -7,6 +7,7 @@ import Pharmacies from './pages/Pharmacies';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import SourceOfFunds from './pages/SourceOfFunds';
+import FlexibleReports from './pages/FlexibleReports';
 import __Layout from './Layout.jsx';
 
 
@@ -20,6 +21,7 @@ export const PAGES = {
     "Reports": Reports,
     "Settings": Settings,
     "SourceOfFunds": SourceOfFunds,
+    "FlexibleReports": FlexibleReports,
 }
 
 export const pagesConfig = {
