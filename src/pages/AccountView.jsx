@@ -40,6 +40,19 @@ export default function AccountView() {
 
   const [activeTab, setActiveTab] = useState(tabParam || 'profile');
   const [printType, setPrintType] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  React.useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (e) {
+        console.log('User not logged in');
+      }
+    };
+    loadUser();
+  }, []);
 
   const { data: account, isLoading } = useQuery({
     queryKey: ['account', accountId],
@@ -129,18 +142,12 @@ export default function AccountView() {
       {/* Print Content */}
       {printType && (
         <div className="print-only">
-          {printType === 'intake' ? (
-            <GeneralIntakeSheet 
-              account={account} 
-              familyMembers={familyMembers}
-              assistances={assistances}
-            />
-          ) : (
-            <ApplicationForm 
-              account={account} 
-              familyMembers={familyMembers}
-            />
-          )}
+          <GeneralIntakeSheet 
+            account={account} 
+            familyMembers={familyMembers}
+            assistances={assistances}
+            currentUser={currentUser}
+          />
         </div>
       )}
 

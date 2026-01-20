@@ -1,21 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { format } from 'date-fns';
-import { base44 } from '@/api/base44Client';
 
-export default function GeneralIntakeSheet({ account, familyMembers = [], assistances = [] }) {
-  const [currentUser, setCurrentUser] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const user = await base44.auth.me();
-        setCurrentUser(user);
-      } catch (e) {
-        console.log('User not logged in');
-      }
-    };
-    loadUser();
-  }, []);
+export default function GeneralIntakeSheet({ account, familyMembers = [], assistances = [], currentUser }) {
   const calculateAge = (birthdate) => {
     if (!birthdate) return '';
     const today = new Date();
