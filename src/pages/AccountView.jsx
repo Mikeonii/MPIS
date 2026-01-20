@@ -104,7 +104,20 @@ export default function AccountView() {
         account_id: accountId,
         amount: parseFloat(assistance.amount) || 0
       });
+      
+      // Deduct from source of funds
+      const sources = await base44.entities.SourceOfFunds.list();
+      const source = sources.find(s => s.id === assistance.source_of_funds_id);
+      if (source) {
+        const newRemaining = source.amount_remaining - parseFloat(assistance.amount);
+        await base44.entities.SourceOfFunds.update(source.id, {
+          amount_remaining: newRemaining,
+          status: newRemaining <= 0 ? 'Depleted' : source.status
+        });
+      }
     }
+    
+    queryClient.invalidateQueries({ queryKey: ['sourceOfFunds'] });
   };
 
   const handlePrint = (type, assistance = null) => {
