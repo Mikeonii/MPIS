@@ -44,6 +44,7 @@ function LayoutContent({ children, currentPageName }) {
     { name: 'Dashboard', icon: LayoutDashboard, label: t('dashboard') },
     { name: 'Accounts', icon: Users, label: t('accounts') },
     { name: 'Pharmacies', icon: Pill, label: t('pharmacies') },
+    { name: 'SourceOfFunds', icon: FileText, label: 'Source of Funds' },
     { name: 'Reports', icon: FileText, label: 'Account Reports' },
     { name: 'BarangayReports', icon: FileText, label: 'Barangay Reports' },
     { name: 'Settings', icon: Settings, label: t('settings') },
