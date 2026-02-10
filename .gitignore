@@ -18,8 +18,8 @@ dist-ssr
 *.local
 
 # Server
-server/node_modules/
-server/db/mpis.db
+# server/node_modules/
+# server/db/mpis.db
 
 # Editor directories and files
 .vscode/*
