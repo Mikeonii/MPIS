@@ -1,16 +1,25 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 const TOKEN_KEY = 'mpis_access_token';
+const LOGIN_TIME_KEY = 'mpis_login_time';
+const SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 function getToken() {
+  const loginTime = localStorage.getItem(LOGIN_TIME_KEY);
+  if (loginTime && Date.now() - Number(loginTime) > SESSION_DURATION_MS) {
+    clearToken();
+    return null;
+  }
   return localStorage.getItem(TOKEN_KEY);
 }
 
 function setToken(token) {
   localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(LOGIN_TIME_KEY, String(Date.now()));
 }
 
 function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(LOGIN_TIME_KEY);
 }
 
 async function request(method, url, data) {
@@ -52,5 +61,5 @@ const client = {
   delete: (url) => request('DELETE', url),
 };
 
-export { client, getToken, setToken, clearToken, TOKEN_KEY };
+export { client, getToken, setToken, clearToken, TOKEN_KEY, LOGIN_TIME_KEY, SESSION_DURATION_MS };
 export default client;

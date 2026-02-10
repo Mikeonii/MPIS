@@ -95,9 +95,9 @@ function LayoutContent({ children, currentPageName }) {
           <div className="p-6 border-b border-gray-200/20">
             <div className="flex items-center gap-3">
               <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/696dc38131ba35d0783e445b/2d46c5743_image.png"
+                src="/logo.png"
                 alt="Madrid Palamboon Logo"
-                className="w-16 h-16 rounded-full object-cover"
+                className="w-14 h-14 object-contain"
               />
               <div>
                 <h1 className={cn(
@@ -117,7 +117,7 @@ function LayoutContent({ children, currentPageName }) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1">
+          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
             {navItems.map((item) => {
               const isActive = currentPageName === item.name;
               return (
