@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
+import { Account, Assistance, FamilyMember } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/lib/AuthContext';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { useTheme } from '@/components/ui/ThemeContext';
@@ -44,41 +45,34 @@ export default function AccountView() {
   const [printType, setPrintType] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedAssistance, setSelectedAssistance] = useState(null);
+  const { user: authUser } = useAuth();
 
   React.useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const user = await base44.auth.me();
-        setCurrentUser(user);
-      } catch (e) {
-        console.log('User not logged in');
-      }
-    };
-    loadUser();
-  }, []);
+    if (authUser) {
+      setCurrentUser(authUser);
+    }
+  }, [authUser]);
 
   const { data: account, isLoading } = useQuery({
     queryKey: ['account', accountId],
-    queryFn: () => base44.entities.Account.list().then(accounts => 
-      accounts.find(a => a.id === accountId)
-    ),
+    queryFn: () => Account.get(accountId),
     enabled: !!accountId,
   });
 
   const { data: familyMembers = [] } = useQuery({
     queryKey: ['familyMembers', accountId],
-    queryFn: () => base44.entities.FamilyMember.filter({ account_id: accountId }),
+    queryFn: () => FamilyMember.filter({ account_id: accountId }),
     enabled: !!accountId,
   });
 
   const { data: assistances = [] } = useQuery({
     queryKey: ['assistances', accountId],
-    queryFn: () => base44.entities.Assistance.filter({ account_id: accountId }, '-created_date'),
+    queryFn: () => Assistance.filter({ account_id: accountId }, '-created_date'),
     enabled: !!accountId,
   });
 
   const createAssistanceMutation = useMutation({
-    mutationFn: (data) => base44.entities.Assistance.create(data),
+    mutationFn: (data) => Assistance.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assistances', accountId] });
       toast.success('Assistance saved successfully');
@@ -98,33 +92,16 @@ export default function AccountView() {
   };
 
   const handleSaveAssistance = async (assistanceData) => {
-    // Get current GL count
-    const allAssistances = await base44.entities.Assistance.list();
-    const glCount = allAssistances.filter(a => a.gl_number).length;
-    
     for (let i = 0; i < assistanceData.length; i++) {
       const assistance = assistanceData[i];
-      const glNumber = `MP-GL-${String(glCount + i + 1).padStart(4, '0')}`;
-      
+
       await createAssistanceMutation.mutateAsync({
         ...assistance,
         account_id: accountId,
-        gl_number: glNumber,
         amount: parseFloat(assistance.amount) || 0
       });
-      
-      // Deduct from source of funds
-      const sources = await base44.entities.SourceOfFunds.list();
-      const source = sources.find(s => s.id === assistance.source_of_funds_id);
-      if (source) {
-        const newRemaining = source.amount_remaining - parseFloat(assistance.amount);
-        await base44.entities.SourceOfFunds.update(source.id, {
-          amount_remaining: newRemaining,
-          status: newRemaining <= 0 ? 'Depleted' : source.status
-        });
-      }
     }
-    
+
     queryClient.invalidateQueries({ queryKey: ['sourceOfFunds'] });
   };
 

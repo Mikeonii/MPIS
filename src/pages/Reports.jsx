@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { Account, Assistance } from '@/api/entities';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@/components/ui/ThemeContext';
 import { useLanguage } from '@/components/ui/LanguageContext';
@@ -14,12 +14,12 @@ export default function Reports() {
 
   const { data: accounts = [], isLoading: accountsLoading } = useQuery({
     queryKey: ['accounts'],
-    queryFn: () => base44.entities.Account.list(),
+    queryFn: () => Account.list(),
   });
 
   const { data: assistances = [], isLoading: assistancesLoading } = useQuery({
     queryKey: ['assistances'],
-    queryFn: () => base44.entities.Assistance.list(),
+    queryFn: () => Assistance.list(),
   });
 
   // Calculate total assistance per account

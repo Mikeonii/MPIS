@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { Account, Assistance } from '@/api/entities';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@/components/ui/ThemeContext';
 import { cn } from '@/lib/utils';
@@ -24,13 +24,13 @@ export default function LastNameWarning({ lastName, assistancePeriod = 90, onByp
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts-lastname-check'],
-    queryFn: () => base44.entities.Account.list(),
+    queryFn: () => Account.list(),
     enabled: !!lastName && lastName.length > 2,
   });
 
   const { data: assistances = [] } = useQuery({
     queryKey: ['assistances-lastname-check'],
-    queryFn: () => base44.entities.Assistance.list('-date_rendered', 500),
+    queryFn: () => Assistance.list('-date_rendered', 500),
     enabled: !!lastName && lastName.length > 2,
   });
 

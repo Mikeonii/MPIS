@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { SourceOfFunds as SourceOfFundsEntity } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/components/ui/LanguageContext';
 import { useTheme } from '@/components/ui/ThemeContext';
@@ -47,11 +47,11 @@ export default function SourceOfFunds() {
 
   const { data: funds = [], isLoading } = useQuery({
     queryKey: ['sourceOfFunds'],
-    queryFn: () => base44.entities.SourceOfFunds.list('-date'),
+    queryFn: () => SourceOfFundsEntity.list('-date'),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.SourceOfFunds.create(data),
+    mutationFn: (data) => SourceOfFundsEntity.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['sourceOfFunds']);
       toast.success('Source of funds created successfully');
@@ -63,7 +63,7 @@ export default function SourceOfFunds() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.SourceOfFunds.update(id, data),
+    mutationFn: ({ id, data }) => SourceOfFundsEntity.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['sourceOfFunds']);
       toast.success('Source of funds updated successfully');
@@ -75,7 +75,7 @@ export default function SourceOfFunds() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.SourceOfFunds.delete(id),
+    mutationFn: (id) => SourceOfFundsEntity.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['sourceOfFunds']);
       toast.success('Source of funds deleted successfully');

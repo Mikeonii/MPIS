@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import { useTheme } from '@/components/ui/ThemeContext';
 import { useLanguage } from '@/components/ui/LanguageContext';
 import GlassCard from '@/components/common/GlassCard';
@@ -23,7 +23,7 @@ export default function Settings() {
   const { darkMode, toggleDarkMode, colorTheme, setColorTheme, themes, currentTheme } = useTheme();
   const { t, language, setLanguage } = useLanguage();
 
-  const [user, setUser] = useState(null);
+  const { user, updateMe, changePassword: authChangePassword } = useAuth();
   const [profileData, setProfileData] = useState({
     full_name: '',
     position: '',
@@ -39,33 +39,24 @@ export default function Settings() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const userData = await base44.auth.me();
-        setUser(userData);
-        setProfileData({
-          full_name: userData.full_name || '',
-          position: userData.position || '',
-          username: userData.username || '',
-          assistance_period: userData.assistance_period || 90
-        });
-      } catch (e) {
-        console.log('User not logged in');
-      }
-    };
-    loadUser();
-  }, []);
+    if (user) {
+      setProfileData({
+        full_name: user.full_name || '',
+        position: user.position || '',
+        username: user.username || '',
+        assistance_period: user.assistance_period || 90
+      });
+    }
+  }, [user]);
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
-      await base44.auth.updateMe({
+      await updateMe({
         position: profileData.position,
         username: profileData.username,
         assistance_period: parseInt(profileData.assistance_period) || 90
       });
-      const updatedUser = await base44.auth.me();
-      setUser(updatedUser);
       toast.success('Profile saved successfully!');
     } catch (error) {
       toast.error('Failed to save profile');
@@ -88,7 +79,7 @@ export default function Settings() {
 
     setIsChangingPassword(true);
     try {
-      await base44.auth.changePassword(passwordData.currentPassword, passwordData.newPassword);
+      await authChangePassword(passwordData.currentPassword, passwordData.newPassword);
       toast.success('Password changed successfully!');
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error) {

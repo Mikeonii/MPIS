@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { LanguageProvider, useLanguage } from '@/components/ui/LanguageContext';
 import { ThemeProvider, useTheme } from '@/components/ui/ThemeContext';
-import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import GlobalSearch from '@/components/search/GlobalSearch';
 import {
   LayoutDashboard,
@@ -23,22 +23,10 @@ import { cn } from '@/lib/utils';
 
 function LayoutContent({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const { user, logout } = useAuth();
   const { t, language, setLanguage } = useLanguage();
   const { darkMode, toggleDarkMode, colorTheme, setColorTheme, themes, currentTheme } = useTheme();
   const [showColorPicker, setShowColorPicker] = useState(false);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const userData = await base44.auth.me();
-        setUser(userData);
-      } catch (e) {
-        console.log('User not logged in');
-      }
-    };
-    loadUser();
-  }, []);
 
   // Filter navigation items based on user role
   const allNavItems = [
@@ -52,19 +40,19 @@ function LayoutContent({ children, currentPageName }) {
     { name: 'Settings', icon: Settings, label: t('settings'), roles: ['admin'] },
   ];
 
-  const navItems = allNavItems.filter(item => 
+  const navItems = allNavItems.filter(item =>
     item.roles.includes(user?.role || 'user')
   );
 
   const handleLogout = () => {
-    base44.auth.logout(window.location.origin);
+    logout();
   };
 
   return (
     <div className={cn(
       "min-h-screen transition-colors duration-300",
-      darkMode 
-        ? "bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950" 
+      darkMode
+        ? "bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950"
         : "bg-gradient-to-br from-slate-100 via-blue-50 to-purple-50"
     )}>
       <style>{`
@@ -85,7 +73,7 @@ function LayoutContent({ children, currentPageName }) {
 
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
@@ -95,8 +83,8 @@ function LayoutContent({ children, currentPageName }) {
       <aside className={cn(
         "fixed top-0 left-0 h-full w-72 z-50 transition-transform duration-300 lg:translate-x-0 no-print",
         sidebarOpen ? "translate-x-0" : "-translate-x-full",
-        darkMode 
-          ? "bg-gray-900/90 border-r border-gray-800" 
+        darkMode
+          ? "bg-gray-900/90 border-r border-gray-800"
           : "bg-white/80 border-r border-gray-200/50",
         "backdrop-blur-xl"
       )}>
@@ -104,7 +92,7 @@ function LayoutContent({ children, currentPageName }) {
           {/* Logo */}
           <div className="p-6 border-b border-gray-200/20">
             <div className="flex items-center gap-3">
-              <img 
+              <img
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/696dc38131ba35d0783e445b/2d46c5743_image.png"
                 alt="Madrid Palamboon Logo"
                 className="w-16 h-16 rounded-full object-cover"
@@ -137,14 +125,14 @@ function LayoutContent({ children, currentPageName }) {
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-sf",
-                    isActive 
+                    isActive
                       ? "text-white shadow-lg"
-                      : darkMode 
+                      : darkMode
                         ? "text-gray-400 hover:text-white hover:bg-gray-800/50"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50"
                   )}
-                  style={isActive ? { 
-                    background: `linear-gradient(135deg, ${currentTheme.primary}, ${currentTheme.accent})` 
+                  style={isActive ? {
+                    background: `linear-gradient(135deg, ${currentTheme.primary}, ${currentTheme.accent})`
                   } : {}}
                 >
                   <item.icon className="w-5 h-5" />
@@ -161,7 +149,7 @@ function LayoutContent({ children, currentPageName }) {
               onClick={toggleDarkMode}
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-sf",
-                darkMode 
+                darkMode
                   ? "text-gray-400 hover:text-white hover:bg-gray-800/50"
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50"
               )}
@@ -175,7 +163,7 @@ function LayoutContent({ children, currentPageName }) {
               onClick={() => setLanguage(language === 'en' ? 'ceb' : 'en')}
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-sf",
-                darkMode 
+                darkMode
                   ? "text-gray-400 hover:text-white hover:bg-gray-800/50"
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50"
               )}
@@ -190,19 +178,19 @@ function LayoutContent({ children, currentPageName }) {
                 onClick={() => setShowColorPicker(!showColorPicker)}
                 className={cn(
                   "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-sf",
-                  darkMode 
+                  darkMode
                     ? "text-gray-400 hover:text-white hover:bg-gray-800/50"
                     : "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50"
                 )}
               >
                 <Palette className="w-5 h-5" />
                 <span className="font-medium">{t('colorTheme')}</span>
-                <div 
+                <div
                   className="w-4 h-4 rounded-full ml-auto"
                   style={{ backgroundColor: currentTheme.primary }}
                 />
               </button>
-              
+
               {showColorPicker && (
                 <div className={cn(
                   "absolute bottom-full left-0 right-0 mb-2 p-3 rounded-xl shadow-xl",
@@ -234,7 +222,7 @@ function LayoutContent({ children, currentPageName }) {
                 "flex items-center gap-3 px-4 py-3 rounded-xl",
                 darkMode ? "bg-gray-800/50" : "bg-gray-100/50"
               )}>
-                <div 
+                <div
                   className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
                   style={{ backgroundColor: currentTheme.primary }}
                 >
@@ -258,7 +246,7 @@ function LayoutContent({ children, currentPageName }) {
                   onClick={handleLogout}
                   className={cn(
                     "p-2 rounded-lg transition-colors",
-                    darkMode 
+                    darkMode
                       ? "text-gray-400 hover:text-white hover:bg-gray-700"
                       : "text-gray-500 hover:text-gray-900 hover:bg-gray-200"
                   )}
@@ -276,7 +264,7 @@ function LayoutContent({ children, currentPageName }) {
         {/* Mobile Header */}
         <header className={cn(
           "lg:hidden sticky top-0 z-30 px-4 py-3 backdrop-blur-xl no-print",
-          darkMode 
+          darkMode
             ? "bg-gray-900/80 border-b border-gray-800"
             : "bg-white/80 border-b border-gray-200/50"
         )}>
@@ -285,7 +273,7 @@ function LayoutContent({ children, currentPageName }) {
               onClick={() => setSidebarOpen(true)}
               className={cn(
                 "p-2 rounded-xl",
-                darkMode 
+                darkMode
                   ? "text-white hover:bg-gray-800"
                   : "text-gray-900 hover:bg-gray-100"
               )}
@@ -301,7 +289,7 @@ function LayoutContent({ children, currentPageName }) {
         {/* Desktop Header with Search */}
         <header className={cn(
           "hidden lg:block sticky top-0 z-30 px-8 py-4 backdrop-blur-xl no-print",
-          darkMode 
+          darkMode
             ? "bg-gray-900/80 border-b border-gray-800"
             : "bg-white/80 border-b border-gray-200/50"
         )}>

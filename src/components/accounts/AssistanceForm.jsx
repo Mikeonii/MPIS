@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { Pharmacy, SourceOfFunds, Assistance, Account, FamilyMember } from '@/api/entities';
+import { useAuth } from '@/lib/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@/components/ui/ThemeContext';
 import { useLanguage } from '@/components/ui/LanguageContext';
@@ -48,17 +49,17 @@ export default function AssistanceForm({
 
   const { data: pharmacies = [] } = useQuery({
     queryKey: ['pharmacies'],
-    queryFn: () => base44.entities.Pharmacy.list(),
+    queryFn: () => Pharmacy.list(),
   });
 
   const { data: fundsources = [] } = useQuery({
     queryKey: ['sourceOfFunds'],
-    queryFn: () => base44.entities.SourceOfFunds.filter({ status: 'Active' }),
+    queryFn: () => SourceOfFunds.filter({ status: 'Active' }),
   });
 
   const { data: allAssistances = [] } = useQuery({
     queryKey: ['allAssistances'],
-    queryFn: () => base44.entities.Assistance.list(),
+    queryFn: () => Assistance.list(),
   });
 
   // Extract unique medicines from all assistances
@@ -80,38 +81,32 @@ export default function AssistanceForm({
 
   const { data: account } = useQuery({
     queryKey: ['account', accountId],
-    queryFn: () => base44.entities.Account.list().then(accounts => 
-      accounts.find(a => a.id === accountId)
-    ),
+    queryFn: () => Account.get(accountId),
     enabled: !!accountId,
   });
 
   const { data: familyMembers = [] } = useQuery({
     queryKey: ['familyMembers', accountId],
-    queryFn: () => base44.entities.FamilyMember.filter({ account_id: accountId }),
+    queryFn: () => FamilyMember.filter({ account_id: accountId }),
     enabled: !!accountId,
   });
 
+  const { user: authUser } = useAuth();
+
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const userData = await base44.auth.me();
-        setUser(userData);
-        const period = userData.assistance_period || 90;
-        setAssistancePeriod(period);
-        
-        // Auto-fill interviewer info
-        setLocalAssistances(prev => prev.map(a => ({
-          ...a,
-          interviewed_by: userData.full_name || userData.email || '',
-          interviewed_by_position: userData.position || ''
-        })));
-      } catch (e) {
-        console.log('User not logged in');
-      }
-    };
-    loadUser();
-  }, []);
+    if (authUser) {
+      setUser(authUser);
+      const period = authUser.assistance_period || 90;
+      setAssistancePeriod(period);
+
+      // Auto-fill interviewer info
+      setLocalAssistances(prev => prev.map(a => ({
+        ...a,
+        interviewed_by: authUser.full_name || authUser.email || '',
+        interviewed_by_position: authUser.position || ''
+      })));
+    }
+  }, [authUser]);
 
   useEffect(() => {
     if (accountId && assistancePeriod) {
@@ -123,8 +118,8 @@ export default function AssistanceForm({
     if (!accountId) return;
 
     try {
-      const allAssistances = await base44.entities.Assistance.list();
-      const allAccounts = await base44.entities.Account.list();
+      const allAssistances = await Assistance.list();
+      const allAccounts = await Account.list();
       
       const now = new Date();
       
@@ -238,13 +233,13 @@ export default function AssistanceForm({
       
       // If pharmacy_id changes, update pharmacy_name
       if (field === 'pharmacy_id') {
-        const pharmacy = pharmacies.find(p => p.id === value);
+        const pharmacy = pharmacies.find(p => String(p.id) === String(value));
         updated[index].pharmacy_name = pharmacy?.pharmacy_name || '';
       }
-      
+
       // If source_of_funds_id changes, update source_of_funds_name
       if (field === 'source_of_funds_id') {
-        const source = fundsources.find(s => s.id === value);
+        const source = fundsources.find(s => String(s.id) === String(value));
         updated[index].source_of_funds_name = source?.source_name || '';
       }
       
@@ -267,7 +262,7 @@ export default function AssistanceForm({
     
     // Validate available funds
     for (const assistance of validAssistances) {
-      const source = fundsources.find(s => s.id === assistance.source_of_funds_id);
+      const source = fundsources.find(s => String(s.id) === String(assistance.source_of_funds_id));
       if (!source) {
         toast.error('Invalid source of funds selected');
         return;
@@ -486,7 +481,7 @@ export default function AssistanceForm({
                     </SelectTrigger>
                     <SelectContent>
                       {pharmacies.map(pharmacy => (
-                        <SelectItem key={pharmacy.id} value={pharmacy.id}>
+                        <SelectItem key={pharmacy.id} value={String(pharmacy.id)}>
                           {pharmacy.pharmacy_name}
                         </SelectItem>
                       ))}
@@ -612,7 +607,7 @@ export default function AssistanceForm({
                   </SelectTrigger>
                   <SelectContent>
                     {fundsources.map(source => (
-                      <SelectItem key={source.id} value={source.id}>
+                      <SelectItem key={source.id} value={String(source.id)}>
                         {source.source_name} - ₱{source.amount_remaining.toLocaleString()} available
                       </SelectItem>
                     ))}

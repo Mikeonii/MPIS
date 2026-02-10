@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useState } from 'react';
+import { Account, FamilyMember, Assistance, SourceOfFunds } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -34,20 +34,18 @@ export default function AccountFormPage() {
 
   const { data: account } = useQuery({
     queryKey: ['account', accountId],
-    queryFn: () => base44.entities.Account.list().then(accounts => 
-      accounts.find(a => a.id === accountId)
-    ),
+    queryFn: () => Account.get(accountId),
     enabled: isEditing,
   });
 
   const { data: familyMembers = [] } = useQuery({
     queryKey: ['familyMembers', accountId],
-    queryFn: () => base44.entities.FamilyMember.filter({ account_id: accountId }),
+    queryFn: () => FamilyMember.filter({ account_id: accountId }),
     enabled: isEditing,
   });
 
   const createAccountMutation = useMutation({
-    mutationFn: (data) => base44.entities.Account.create(data),
+    mutationFn: (data) => Account.create(data),
     onSuccess: (newAccount) => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       return newAccount;
@@ -55,7 +53,7 @@ export default function AccountFormPage() {
   });
 
   const updateAccountMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Account.update(id, data),
+    mutationFn: ({ id, data }) => Account.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       queryClient.invalidateQueries({ queryKey: ['account', accountId] });
@@ -63,11 +61,11 @@ export default function AccountFormPage() {
   });
 
   const createFamilyMemberMutation = useMutation({
-    mutationFn: (data) => base44.entities.FamilyMember.create(data),
+    mutationFn: (data) => FamilyMember.create(data),
   });
 
   const deleteFamilyMemberMutation = useMutation({
-    mutationFn: (id) => base44.entities.FamilyMember.delete(id),
+    mutationFn: (id) => FamilyMember.delete(id),
   });
 
   const handleSave = async (accountData, familyMembersData, assistances = []) => {
@@ -96,18 +94,16 @@ export default function AccountFormPage() {
 
       // Create assistances and update fund sources
       for (const assistance of assistances) {
-        await base44.entities.Assistance.create({
+        await Assistance.create({
           ...assistance,
           account_id: savedAccountId
         });
-        
+
         // Deduct from source of funds
-        const source = await base44.entities.SourceOfFunds.list().then(sources => 
-          sources.find(s => s.id === assistance.source_of_funds_id)
-        );
+        const source = await SourceOfFunds.get(assistance.source_of_funds_id);
         if (source) {
           const newRemaining = source.amount_remaining - parseFloat(assistance.amount);
-          await base44.entities.SourceOfFunds.update(source.id, {
+          await SourceOfFunds.update(source.id, {
             amount_remaining: newRemaining,
             status: newRemaining <= 0 ? 'Depleted' : source.status
           });

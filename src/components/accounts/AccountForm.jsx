@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/components/ui/ThemeContext';
 import { useLanguage } from '@/components/ui/LanguageContext';
-import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import GlassCard from '@/components/common/GlassCard';
 import LastNameWarning from './LastNameWarning';
@@ -46,11 +46,8 @@ export default function AccountForm({
   const [barangaysList, setBarangaysList] = useState([]);
   const [loadingLocations, setLoadingLocations] = useState(true);
 
-  // Fetch user settings for assistance period
-  const { data: user } = useQuery({
-    queryKey: ['user-settings'],
-    queryFn: () => base44.auth.me(),
-  });
+  // Get user from auth context for assistance period
+  const { user } = useAuth();
 
   const assistancePeriod = user?.assistance_period || 90;
 

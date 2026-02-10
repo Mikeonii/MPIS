@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { User } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '@/components/ui/ThemeContext';
 import { useLanguage } from '@/components/ui/LanguageContext';
@@ -33,11 +33,11 @@ export default function UsersPage() {
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => User.list(),
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.User.update(id, data),
+    mutationFn: ({ id, data }) => User.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setShowEditDialog(false);
@@ -49,7 +49,7 @@ export default function UsersPage() {
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: (id) => base44.entities.User.delete(id),
+    mutationFn: (id) => User.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setShowDeleteDialog(false);
@@ -62,7 +62,7 @@ export default function UsersPage() {
 
   const handleInvite = async () => {
     try {
-      await base44.users.inviteUser(inviteData.email, inviteData.role);
+      await User.invite({ email: inviteData.email, role: inviteData.role });
       toast.success('Invitation sent to ' + inviteData.email);
       setShowInviteDialog(false);
       setInviteData({ email: '', role: 'user' });
@@ -111,7 +111,7 @@ export default function UsersPage() {
     }
     
     try {
-      await base44.entities.User.update(selectedUser.id, {
+      await User.update(selectedUser.id, {
         password: passwordData.newPassword
       });
       toast.success('Password updated successfully');

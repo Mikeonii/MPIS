@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { Account, Assistance, SourceOfFunds } from '@/api/entities';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@/components/ui/ThemeContext';
 import GlassCard from '@/components/common/GlassCard';
@@ -33,17 +33,17 @@ export default function FlexibleReports() {
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
-    queryFn: () => base44.entities.Account.list(),
+    queryFn: () => Account.list(),
   });
 
   const { data: assistances = [] } = useQuery({
     queryKey: ['assistances'],
-    queryFn: () => base44.entities.Assistance.list(),
+    queryFn: () => Assistance.list(),
   });
 
   const { data: sources = [] } = useQuery({
     queryKey: ['sourceOfFunds'],
-    queryFn: () => base44.entities.SourceOfFunds.list(),
+    queryFn: () => SourceOfFunds.list(),
   });
 
   // Extract unique values for filters

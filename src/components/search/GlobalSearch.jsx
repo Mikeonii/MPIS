@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Account, FamilyMember, Assistance } from '@/api/entities';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@/components/ui/ThemeContext';
 import { cn } from '@/lib/utils';
@@ -9,51 +9,53 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
+const EMPTY_ARRAY = [];
+
 export default function GlobalSearch() {
   const { darkMode, currentTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [results, setResults] = useState([]);
   const navigate = useNavigate();
 
-  const { data: accounts = [] } = useQuery({
+  const { data: accounts } = useQuery({
     queryKey: ['accounts-search'],
-    queryFn: () => base44.entities.Account.list(),
+    queryFn: () => Account.list(),
     enabled: open,
   });
 
-  const { data: familyMembers = [] } = useQuery({
+  const { data: familyMembers } = useQuery({
     queryKey: ['family-members-search'],
-    queryFn: () => base44.entities.FamilyMember.list(),
+    queryFn: () => FamilyMember.list(),
     enabled: open,
   });
 
-  const { data: assistances = [] } = useQuery({
+  const { data: assistances } = useQuery({
     queryKey: ['assistances-search'],
-    queryFn: () => base44.entities.Assistance.list(),
+    queryFn: () => Assistance.list(),
     enabled: open,
   });
 
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setResults([]);
-      return;
-    }
+  const safeAccounts = accounts ?? EMPTY_ARRAY;
+  const safeFamilyMembers = familyMembers ?? EMPTY_ARRAY;
+  const safeAssistances = assistances ?? EMPTY_ARRAY;
+
+  const results = useMemo(() => {
+    if (!searchQuery.trim()) return EMPTY_ARRAY;
 
     const query = searchQuery.toLowerCase();
     const searchResults = [];
 
     // Search in accounts
-    accounts.forEach(account => {
+    safeAccounts.forEach(account => {
       const fullName = `${account.first_name || ''} ${account.middle_name || ''} ${account.last_name || ''}`.toLowerCase();
-      const matches = 
+      const matches =
         fullName.includes(query) ||
         account.last_name?.toLowerCase().includes(query) ||
         account.first_name?.toLowerCase().includes(query) ||
         account.barangay?.toLowerCase().includes(query);
 
       if (matches) {
-        const accountAssistances = assistances.filter(a => a.account_id === account.id);
+        const accountAssistances = safeAssistances.filter(a => a.account_id === account.id);
         searchResults.push({
           type: 'account',
           data: account,
@@ -64,10 +66,10 @@ export default function GlobalSearch() {
     });
 
     // Search in family members
-    familyMembers.forEach(member => {
+    safeFamilyMembers.forEach(member => {
       const memberName = member.complete_name?.toLowerCase() || '';
       if (memberName.includes(query)) {
-        const account = accounts.find(a => a.id === member.account_id);
+        const account = safeAccounts.find(a => a.id === member.account_id);
         if (account) {
           searchResults.push({
             type: 'family_member',
@@ -79,8 +81,8 @@ export default function GlobalSearch() {
       }
     });
 
-    setResults(searchResults);
-  }, [searchQuery, accounts, familyMembers, assistances]);
+    return searchResults;
+  }, [searchQuery, safeAccounts, safeFamilyMembers, safeAssistances]);
 
   const handleResultClick = (result) => {
     if (result.type === 'account') {

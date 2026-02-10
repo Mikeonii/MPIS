@@ -1,26 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
+import { Account, Assistance, Pharmacy } from '@/api/entities';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@/components/ui/ThemeContext';
 import { useLanguage } from '@/components/ui/LanguageContext';
+import { useAuth } from '@/lib/AuthContext';
 import GlassCard from '@/components/common/GlassCard';
 import { cn } from '@/lib/utils';
-import { 
-  Users, 
-  HandHeart, 
-  Pill, 
+import {
+  Users,
+  HandHeart,
+  Pill,
   TrendingUp,
   Calendar,
   ArrowUpRight,
   Activity
 } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -32,26 +33,14 @@ import { format } from 'date-fns';
 export default function Dashboard() {
   const { darkMode, currentTheme } = useTheme();
   const { t } = useLanguage();
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const userData = await base44.auth.me();
-        setUser(userData);
-      } catch (e) {
-        console.log('User not logged in');
-      }
-    };
-    loadUser();
-  }, []);
+  const { user } = useAuth();
 
   const isAdmin = user?.role === 'admin';
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts', user?.email],
     queryFn: async () => {
-      const allAccounts = await base44.entities.Account.list();
+      const allAccounts = await Account.list();
       return isAdmin ? allAccounts : allAccounts.filter(a => a.created_by === user?.email);
     },
     enabled: !!user,
@@ -60,7 +49,7 @@ export default function Dashboard() {
   const { data: assistances = [] } = useQuery({
     queryKey: ['assistances', user?.email],
     queryFn: async () => {
-      const allAssistances = await base44.entities.Assistance.list('-created_date', 100);
+      const allAssistances = await Assistance.list('-created_date', 100);
       return isAdmin ? allAssistances : allAssistances.filter(a => a.created_by === user?.email);
     },
     enabled: !!user,
@@ -69,7 +58,7 @@ export default function Dashboard() {
   const { data: pharmacies = [] } = useQuery({
     queryKey: ['pharmacies', user?.email],
     queryFn: async () => {
-      const allPharmacies = await base44.entities.Pharmacy.list();
+      const allPharmacies = await Pharmacy.list();
       return isAdmin ? allPharmacies : allPharmacies.filter(p => p.created_by === user?.email);
     },
     enabled: !!user,
@@ -78,7 +67,7 @@ export default function Dashboard() {
   // Calculate statistics
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
-  
+
   const assistedThisMonth = assistances.filter(a => {
     const date = new Date(a.date_rendered || a.created_date);
     return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
@@ -113,29 +102,29 @@ export default function Dashboard() {
   const recentAssistance = assistances.slice(0, 5);
 
   const stats = [
-    { 
-      icon: Users, 
-      title: t('totalAccounts'), 
+    {
+      icon: Users,
+      title: t('totalAccounts'),
       value: accounts.length,
       trend: accounts.length > 0 ? '+12%' : null,
       trendUp: true
     },
-    { 
-      icon: HandHeart, 
-      title: t('totalAssistance'), 
+    {
+      icon: HandHeart,
+      title: t('totalAssistance'),
       value: `₱${totalAssistanceAmount.toLocaleString()}`,
       trend: totalAssistanceAmount > 0 ? '+8%' : null,
       trendUp: true
     },
-    { 
-      icon: Pill, 
-      title: t('totalPharmacies'), 
+    {
+      icon: Pill,
+      title: t('totalPharmacies'),
       value: pharmacies.length,
       trend: null
     },
-    { 
-      icon: Calendar, 
-      title: t('assistedThisMonth'), 
+    {
+      icon: Calendar,
+      title: t('assistedThisMonth'),
       value: assistedThisMonth,
       trend: assistedThisMonth > 0 ? '+5%' : null,
       trendUp: true
@@ -166,12 +155,12 @@ export default function Dashboard() {
           <GlassCard key={index} className="p-5">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
-                <div 
+                <div
                   className="w-12 h-12 rounded-xl flex items-center justify-center"
                   style={{ backgroundColor: `${currentTheme.primary}20` }}
                 >
-                  <stat.icon 
-                    className="w-6 h-6" 
+                  <stat.icon
+                    className="w-6 h-6"
                     style={{ color: currentTheme.primary }}
                   />
                 </div>
@@ -193,8 +182,8 @@ export default function Dashboard() {
               {stat.trend && (
                 <div className={cn(
                   "text-xs font-semibold px-2 py-1 rounded-lg flex items-center gap-1",
-                  stat.trendUp 
-                    ? "text-green-600 bg-green-100 dark:bg-green-900/30" 
+                  stat.trendUp
+                    ? "text-green-600 bg-green-100 dark:bg-green-900/30"
                     : "text-red-600 bg-red-100 dark:bg-red-900/30"
                 )}>
                   <TrendingUp className="w-3 h-3" />
@@ -219,19 +208,19 @@ export default function Dashboard() {
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={barangayData} layout="vertical">
-                <CartesianGrid 
-                  strokeDasharray="3 3" 
+                <CartesianGrid
+                  strokeDasharray="3 3"
                   stroke={darkMode ? '#374151' : '#e5e7eb'}
                 />
                 <XAxis type="number" stroke={darkMode ? '#9ca3af' : '#6b7280'} />
-                <YAxis 
-                  dataKey="name" 
-                  type="category" 
+                <YAxis
+                  dataKey="name"
+                  type="category"
                   width={100}
                   stroke={darkMode ? '#9ca3af' : '#6b7280'}
                   tick={{ fontSize: 12 }}
                 />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{
                     backgroundColor: darkMode ? '#1f2937' : '#fff',
                     border: 'none',
@@ -240,8 +229,8 @@ export default function Dashboard() {
                   }}
                   labelStyle={{ color: darkMode ? '#fff' : '#000' }}
                 />
-                <Bar 
-                  dataKey="value" 
+                <Bar
+                  dataKey="value"
                   fill={currentTheme.primary}
                   radius={[0, 6, 6, 0]}
                 />
@@ -271,13 +260,13 @@ export default function Dashboard() {
                   dataKey="value"
                 >
                   {typeData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
+                    <Cell
+                      key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
                     />
                   ))}
                 </Pie>
-                <Tooltip 
+                <Tooltip
                   contentStyle={{
                     backgroundColor: darkMode ? '#1f2937' : '#fff',
                     border: 'none',
@@ -285,7 +274,7 @@ export default function Dashboard() {
                     boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
                   }}
                 />
-                <Legend 
+                <Legend
                   wrapperStyle={{ color: darkMode ? '#fff' : '#000' }}
                 />
               </PieChart>
@@ -303,8 +292,8 @@ export default function Dashboard() {
           )}>
             {t('recentAssistance')}
           </h3>
-          <Activity 
-            className="w-5 h-5" 
+          <Activity
+            className="w-5 h-5"
             style={{ color: currentTheme.primary }}
           />
         </div>
@@ -328,12 +317,12 @@ export default function Dashboard() {
                     "py-3 text-sm font-medium",
                     darkMode ? "text-white" : "text-gray-900"
                   )}>
-                    {assistance.account_id?.substring(0, 8) || 'N/A'}
+                    {String(assistance.account_id || '').substring(0, 8) || 'N/A'}
                   </td>
                   <td className="py-3">
-                    <span 
+                    <span
                       className="text-xs font-medium px-2 py-1 rounded-lg"
-                      style={{ 
+                      style={{
                         backgroundColor: `${currentTheme.primary}20`,
                         color: currentTheme.primary
                       }}
@@ -351,7 +340,7 @@ export default function Dashboard() {
                     "py-3 text-sm",
                     darkMode ? "text-gray-400" : "text-gray-500"
                   )}>
-                    {assistance.date_rendered 
+                    {assistance.date_rendered
                       ? format(new Date(assistance.date_rendered), 'MMM d, yyyy')
                       : format(new Date(assistance.created_date), 'MMM d, yyyy')
                     }
@@ -360,8 +349,8 @@ export default function Dashboard() {
               ))}
               {recentAssistance.length === 0 && (
                 <tr>
-                  <td 
-                    colSpan={4} 
+                  <td
+                    colSpan={4}
                     className={cn(
                       "py-8 text-center text-sm",
                       darkMode ? "text-gray-400" : "text-gray-500"

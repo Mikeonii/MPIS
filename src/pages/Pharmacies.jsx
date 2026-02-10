@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { Pharmacy } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '@/components/ui/ThemeContext';
 import { useLanguage } from '@/components/ui/LanguageContext';
@@ -58,11 +58,11 @@ export default function Pharmacies() {
 
   const { data: pharmacies = [], isLoading } = useQuery({
     queryKey: ['pharmacies'],
-    queryFn: () => base44.entities.Pharmacy.list('-created_date'),
+    queryFn: () => Pharmacy.list('-created_date'),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Pharmacy.create(data),
+    mutationFn: (data) => Pharmacy.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pharmacies'] });
       toast.success(t('savedSuccessfully'));
@@ -71,7 +71,7 @@ export default function Pharmacies() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Pharmacy.update(id, data),
+    mutationFn: ({ id, data }) => Pharmacy.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pharmacies'] });
       toast.success(t('savedSuccessfully'));
@@ -80,7 +80,7 @@ export default function Pharmacies() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Pharmacy.delete(id),
+    mutationFn: (id) => Pharmacy.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pharmacies'] });
       toast.success(t('deletedSuccessfully'));
