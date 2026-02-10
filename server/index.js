@@ -2,9 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-
-// Initialize database (creates tables + seeds admin)
-require('./db/database');
+const db = require('./db/database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,8 +32,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
-// Global error handler — catches unhandled errors in route handlers
-// and returns a proper JSON 500 response instead of crashing
+// Global error handler
 app.use((err, req, res, _next) => {
   console.error(`[ERROR] ${req.method} ${req.originalUrl}:`, err);
   res.status(err.status || 500).json({
@@ -43,6 +40,12 @@ app.use((err, req, res, _next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`MPIS server running on http://localhost:${PORT}`);
+// Initialize database then start server
+db.init().then(() => {
+  app.listen(PORT, () => {
+    console.log(`MPIS server running on http://localhost:${PORT}`);
+  });
+}).catch(err => {
+  console.error('Failed to initialize database:', err);
+  process.exit(1);
 });
