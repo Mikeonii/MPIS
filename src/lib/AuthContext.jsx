@@ -1,5 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import client, { setToken, clearToken, getToken } from '@/api/client';
+import db, { clearAllOfflineData } from '@/lib/offline/db';
+import { releaseDeviceLock } from '@/lib/offline/deviceLock';
 
 const AuthContext = createContext();
 
@@ -25,7 +27,26 @@ export const AuthProvider = ({ children }) => {
       const currentUser = await client.get('/auth/me');
       setUser(currentUser);
       setIsAuthenticated(true);
+
+      // Update cached user
+      try {
+        await db.users.put(currentUser);
+        localStorage.setItem('mpis_offline_user', JSON.stringify(currentUser));
+      } catch { /* ignore */ }
     } catch (error) {
+      // OFFLINE FALLBACK: if network error, use cached user
+      if (error.message === 'Failed to fetch' || !navigator.onLine) {
+        const cachedUser = localStorage.getItem('mpis_offline_user');
+        if (cachedUser) {
+          const parsed = JSON.parse(cachedUser);
+          setUser(parsed);
+          setIsAuthenticated(true);
+          console.log('[Auth] Using cached user for offline mode');
+          setIsLoadingAuth(false);
+          return;
+        }
+      }
+
       console.error('User auth check failed:', error);
       setIsAuthenticated(false);
       clearToken();
@@ -39,10 +60,26 @@ export const AuthProvider = ({ children }) => {
     setToken(result.token);
     setUser(result.user);
     setIsAuthenticated(true);
+
+    // Cache user data for offline auth
+    try {
+      await db.users.put(result.user);
+      localStorage.setItem('mpis_offline_user', JSON.stringify(result.user));
+    } catch { /* ignore */ }
+
     return result;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await releaseDeviceLock();
+    } catch { /* ignore */ }
+
+    try {
+      await clearAllOfflineData();
+    } catch { /* ignore */ }
+
+    localStorage.removeItem('mpis_offline_user');
     setUser(null);
     setIsAuthenticated(false);
     clearToken();

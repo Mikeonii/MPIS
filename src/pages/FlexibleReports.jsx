@@ -124,7 +124,7 @@ export default function FlexibleReports() {
     return results;
   }, [assistances, accounts, filters]);
 
-  const totalAmount = filteredResults.reduce((sum, r) => sum + (r.amount || 0), 0);
+  const totalAmount = filteredResults.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
 
   const clearFilters = () => {
     setFilters({

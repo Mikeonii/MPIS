@@ -41,7 +41,7 @@ export default function BarangayReports() {
     }
 
     const accountAssistances = assistances.filter(a => a.account_id === account.id);
-    const accountTotalAssistance = accountAssistances.reduce((sum, a) => sum + (a.amount || 0), 0);
+    const accountTotalAssistance = accountAssistances.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
     
     barangayData[barangay].accounts.push({
       ...account,

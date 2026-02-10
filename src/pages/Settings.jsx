@@ -53,6 +53,7 @@ export default function Settings() {
     setIsSaving(true);
     try {
       await updateMe({
+        full_name: profileData.full_name,
         position: profileData.position,
         username: profileData.username,
         assistance_period: parseInt(profileData.assistance_period) || 90
@@ -148,15 +149,10 @@ export default function Settings() {
             <Label className={labelClasses}>Full Name</Label>
             <Input
               value={profileData.full_name}
-              className={cn(inputClasses, "opacity-50")}
-              disabled
+              onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
+              className={inputClasses}
+              placeholder="Enter your full name"
             />
-            <p className={cn(
-              "text-xs mt-1",
-              darkMode ? "text-gray-500" : "text-gray-400"
-            )}>
-              Name cannot be changed here
-            </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

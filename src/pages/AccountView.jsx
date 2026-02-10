@@ -477,7 +477,7 @@ export default function AccountView() {
                     "px-4 py-2 rounded-xl font-semibold",
                     darkMode ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-900"
                   )}>
-                    Total: ₱{assistances.reduce((sum, a) => sum + (a.amount || 0), 0).toLocaleString()}
+                    Total: ₱{assistances.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0).toLocaleString()}
                   </div>
                 )}
               </div>

@@ -25,7 +25,7 @@ export default function Reports() {
   // Calculate total assistance per account
   const accountsWithTotalAssistance = accounts.map(account => {
     const accountAssistances = assistances.filter(a => a.account_id === account.id);
-    const totalAssistance = accountAssistances.reduce((sum, a) => sum + (a.amount || 0), 0);
+    const totalAssistance = accountAssistances.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
     const assistanceCount = accountAssistances.length;
     
     return {

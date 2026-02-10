@@ -73,7 +73,7 @@ export default function Dashboard() {
     return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
   }).length;
 
-  const totalAssistanceAmount = assistances.reduce((sum, a) => sum + (a.amount || 0), 0);
+  const totalAssistanceAmount = assistances.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
 
   // Group by barangay
   const byBarangay = accounts.reduce((acc, account) => {

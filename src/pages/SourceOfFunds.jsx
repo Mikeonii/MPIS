@@ -125,8 +125,8 @@ export default function SourceOfFunds() {
     });
   };
 
-  const totalFunded = funds.reduce((sum, f) => sum + (f.amount_funded || 0), 0);
-  const totalRemaining = funds.reduce((sum, f) => sum + (f.amount_remaining || 0), 0);
+  const totalFunded = funds.reduce((sum, f) => sum + (parseFloat(f.amount_funded) || 0), 0);
+  const totalRemaining = funds.reduce((sum, f) => sum + (parseFloat(f.amount_remaining) || 0), 0);
   const totalUsed = totalFunded - totalRemaining;
 
   return (
@@ -311,7 +311,9 @@ export default function SourceOfFunds() {
               </thead>
               <tbody className={cn("divide-y", darkMode ? "divide-gray-700" : "divide-gray-200")}>
                 {funds.map((fund) => {
-                  const percentUsed = ((fund.amount_funded - fund.amount_remaining) / fund.amount_funded * 100).toFixed(1);
+                  const amountFunded = parseFloat(fund.amount_funded) || 0;
+                  const amountRemaining = parseFloat(fund.amount_remaining) || 0;
+                  const percentUsed = amountFunded > 0 ? ((amountFunded - amountRemaining) / amountFunded * 100).toFixed(1) : '0.0';
                   return (
                     <tr key={fund.id} className={darkMode ? "hover:bg-gray-800/50" : "hover:bg-gray-50"}>
                       <td className="px-6 py-4">
@@ -328,12 +330,12 @@ export default function SourceOfFunds() {
                         {new Date(fund.date).toLocaleDateString()}
                       </td>
                       <td className={cn("px-6 py-4 text-right font-medium", darkMode ? "text-white" : "text-gray-900")}>
-                        ₱{fund.amount_funded.toLocaleString()}
+                        ₱{amountFunded.toLocaleString()}
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-right">
                           <div className={cn("font-medium", darkMode ? "text-white" : "text-gray-900")}>
-                            ₱{fund.amount_remaining.toLocaleString()}
+                            ₱{amountRemaining.toLocaleString()}
                           </div>
                           <div className={cn("text-xs", darkMode ? "text-gray-400" : "text-gray-500")}>
                             {percentUsed}% used

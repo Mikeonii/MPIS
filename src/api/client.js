@@ -15,7 +15,7 @@ function clearToken() {
 
 async function request(method, url, data) {
   const token = getToken();
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }

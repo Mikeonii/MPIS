@@ -20,6 +20,8 @@ import {
   FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import OfflineBanner from '@/components/offline/OfflineBanner';
+import SyncStatusIndicator from '@/components/offline/SyncStatusIndicator';
 
 function LayoutContent({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -255,6 +257,8 @@ function LayoutContent({ children, currentPageName }) {
                 </button>
               </div>
             )}
+
+            <SyncStatusIndicator darkMode={darkMode} />
           </div>
         </div>
       </aside>
@@ -280,6 +284,7 @@ function LayoutContent({ children, currentPageName }) {
             >
               <Menu className="w-6 h-6" />
             </button>
+            <OfflineBanner darkMode={darkMode} />
             <div className="flex-1 max-w-md">
               <GlobalSearch />
             </div>
@@ -293,7 +298,8 @@ function LayoutContent({ children, currentPageName }) {
             ? "bg-gray-900/80 border-b border-gray-800"
             : "bg-white/80 border-b border-gray-200/50"
         )}>
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-end gap-3">
+            <OfflineBanner darkMode={darkMode} />
             <GlobalSearch />
           </div>
         </header>

@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { UserPlus, Pencil, Trash2, Search, Mail, Shield, Key } from 'lucide-react';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 
 export default function UsersPage() {
   const { darkMode, currentTheme } = useTheme();
@@ -299,7 +299,10 @@ export default function UsersPage() {
                       "py-4 px-4 text-sm",
                       darkMode ? "text-gray-400" : "text-gray-600"
                     )}>
-                      {format(new Date(user.created_date), 'MMM d, yyyy')}
+                      {(() => {
+                        const date = new Date(user.created_at);
+                        return isValid(date) ? format(date, 'MMM d, yyyy') : '-';
+                      })()}
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex items-center justify-end gap-2">
