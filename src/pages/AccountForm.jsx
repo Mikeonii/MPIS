@@ -23,7 +23,8 @@ export default function AccountFormPage() {
   const { darkMode, currentTheme } = useTheme();
   const { t } = useLanguage();
   const queryClient = useQueryClient();
-  
+  const navigate = useNavigate();
+
   const urlParams = new URLSearchParams(window.location.search);
   const accountId = urlParams.get('id');
   const isEditing = !!accountId;
@@ -117,7 +118,7 @@ export default function AccountFormPage() {
         setNewAccountId(savedAccountId);
         setShowAssistanceDialog(true);
       } else {
-        window.location.href = createPageUrl(`AccountView?id=${savedAccountId}`);
+        navigate(createPageUrl(`AccountView?id=${savedAccountId}`));
       }
     } catch (error) {
       console.error('Error saving account:', error);
@@ -188,7 +189,7 @@ export default function AccountFormPage() {
               variant="outline"
               onClick={() => {
                 setShowAssistanceDialog(false);
-                window.location.href = createPageUrl(`AccountView?id=${newAccountId}`);
+                navigate(createPageUrl(`AccountView?id=${newAccountId}`));
               }}
               className={darkMode ? "border-gray-600" : ""}
             >
@@ -197,7 +198,7 @@ export default function AccountFormPage() {
             <Button
               onClick={() => {
                 setShowAssistanceDialog(false);
-                window.location.href = createPageUrl(`AccountView?id=${newAccountId}&tab=assistance`);
+                navigate(createPageUrl(`AccountView?id=${newAccountId}&tab=assistance`));
               }}
               className="text-white"
               style={{ backgroundColor: currentTheme.primary }}
