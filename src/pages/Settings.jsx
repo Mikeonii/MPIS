@@ -7,15 +7,20 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { 
-  Sun, 
-  Moon, 
-  Languages, 
+import {
+  Sun,
+  Moon,
+  Languages,
   Palette,
   User,
   Save,
   Check,
-  Lock
+  Lock,
+  RefreshCw,
+  Download,
+  CheckCircle2,
+  Loader2,
+  Info
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -37,6 +42,97 @@ export default function Settings() {
     confirmPassword: ''
   });
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // App update state
+  const [updateStatus, setUpdateStatus] = useState('idle'); // idle | checking | found | not-found | updating | error
+  const [swInfo, setSwInfo] = useState({ hasServiceWorker: false, cacheCount: 0 });
+
+  // Check for active service workers and caches on mount
+  useEffect(() => {
+    async function checkSwStatus() {
+      try {
+        let hasServiceWorker = false;
+        let cacheCount = 0;
+
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          hasServiceWorker = registrations.length > 0;
+        }
+
+        if ('caches' in window) {
+          const cacheNames = await caches.keys();
+          cacheCount = cacheNames.length;
+        }
+
+        setSwInfo({ hasServiceWorker, cacheCount });
+      } catch {
+        // Silently fail -- not critical
+      }
+    }
+    checkSwStatus();
+  }, []);
+
+  // Check for updates: ask the service worker to check the server for a new SW script
+  const handleCheckForUpdates = async () => {
+    setUpdateStatus('checking');
+    try {
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        if (registrations.length > 0) {
+          // Force the SW to check the server for a new version
+          const registration = registrations[0];
+          await registration.update();
+
+          // If there is a waiting or installing worker, a new version is available
+          if (registration.waiting || registration.installing) {
+            setUpdateStatus('found');
+            return;
+          }
+        }
+      }
+
+      // No new version detected via SW -- compare build timestamps
+      // A simple heuristic: if the page has been open for a while or cached, prompt anyway
+      setUpdateStatus('not-found');
+    } catch {
+      setUpdateStatus('error');
+    }
+  };
+
+  // Force update: unregister SW, clear all caches, hard reload
+  const handleForceUpdate = async () => {
+    setUpdateStatus('updating');
+    try {
+      // 1. Tell any waiting service worker to skip waiting and activate immediately
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          if (registration.waiting) {
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+          await registration.unregister();
+        }
+      }
+
+      // 2. Clear all Cache Storage caches (Workbox precache, runtime caches, etc.)
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      }
+
+      // 3. Small delay to ensure SW is fully unregistered before reload
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // 4. Force a hard reload (bypasses any HTTP cache)
+      toast.success('Caches cleared. Reloading...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      window.location.replace(window.location.href.split('#')[0] + '?_t=' + Date.now());
+    } catch (error) {
+      console.error('[Update] Force update failed:', error);
+      setUpdateStatus('error');
+      toast.error('Update failed. Try manually refreshing the page.');
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -436,7 +532,7 @@ export default function Settings() {
       {/* Password Settings */}
       <GlassCard className="p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div 
+          <div
             className="w-10 h-10 rounded-xl flex items-center justify-center"
             style={{ backgroundColor: `${currentTheme.primary}20` }}
           >
@@ -501,6 +597,189 @@ export default function Settings() {
             </Button>
           </div>
         </form>
+      </GlassCard>
+
+      {/* App Update */}
+      <GlassCard className="p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: `${currentTheme.primary}20` }}
+          >
+            <Download className="w-5 h-5" style={{ color: currentTheme.primary }} />
+          </div>
+          <div>
+            <h2 className={cn(
+              "text-lg font-semibold",
+              darkMode ? "text-white" : "text-gray-900"
+            )}>
+              App Update
+            </h2>
+            <p className={cn(
+              "text-sm",
+              darkMode ? "text-gray-400" : "text-gray-500"
+            )}>
+              Check for updates and refresh the app
+            </p>
+          </div>
+        </div>
+
+        {/* Version & cache info */}
+        <div className={cn(
+          "rounded-xl p-4 mb-4 border",
+          darkMode
+            ? "bg-gray-800/50 border-gray-700/50"
+            : "bg-gray-50 border-gray-200"
+        )}>
+          <div className="flex items-start gap-3">
+            <Info className={cn(
+              "w-4 h-4 mt-0.5 flex-shrink-0",
+              darkMode ? "text-gray-400" : "text-gray-500"
+            )} />
+            <div className="space-y-1 text-sm">
+              <p className={darkMode ? "text-gray-300" : "text-gray-700"}>
+                <span className="font-medium">Version:</span>{' '}
+                {typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'}
+              </p>
+              <p className={darkMode ? "text-gray-400" : "text-gray-500"}>
+                <span className="font-medium">Built:</span>{' '}
+                {typeof __BUILD_TIME__ !== 'undefined'
+                  ? new Date(__BUILD_TIME__).toLocaleString()
+                  : 'Development'}
+              </p>
+              <p className={darkMode ? "text-gray-400" : "text-gray-500"}>
+                <span className="font-medium">Service Worker:</span>{' '}
+                {swInfo.hasServiceWorker ? 'Active' : 'Inactive'}
+                {swInfo.cacheCount > 0 && ` (${swInfo.cacheCount} cache${swInfo.cacheCount !== 1 ? 's' : ''})`}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Status message */}
+        {updateStatus === 'found' && (
+          <div className={cn(
+            "rounded-xl p-4 mb-4 border",
+            darkMode
+              ? "bg-green-900/20 border-green-700/50"
+              : "bg-green-50 border-green-200"
+          )}>
+            <div className="flex items-center gap-2">
+              <Download className={cn(
+                "w-4 h-4",
+                darkMode ? "text-green-400" : "text-green-600"
+              )} />
+              <p className={cn(
+                "text-sm font-medium",
+                darkMode ? "text-green-300" : "text-green-700"
+              )}>
+                A new version is available! Click "Update Now" to apply it.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {updateStatus === 'not-found' && (
+          <div className={cn(
+            "rounded-xl p-4 mb-4 border",
+            darkMode
+              ? "bg-blue-900/20 border-blue-700/50"
+              : "bg-blue-50 border-blue-200"
+          )}>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className={cn(
+                "w-4 h-4",
+                darkMode ? "text-blue-400" : "text-blue-600"
+              )} />
+              <p className={cn(
+                "text-sm font-medium",
+                darkMode ? "text-blue-300" : "text-blue-700"
+              )}>
+                You are on the latest version. If you still experience issues, use "Force Refresh" below.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {updateStatus === 'error' && (
+          <div className={cn(
+            "rounded-xl p-4 mb-4 border",
+            darkMode
+              ? "bg-red-900/20 border-red-700/50"
+              : "bg-red-50 border-red-200"
+          )}>
+            <div className="flex items-center gap-2">
+              <Info className={cn(
+                "w-4 h-4",
+                darkMode ? "text-red-400" : "text-red-600"
+              )} />
+              <p className={cn(
+                "text-sm font-medium",
+                darkMode ? "text-red-300" : "text-red-700"
+              )}>
+                Could not check for updates. Try the "Force Refresh" button instead.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button
+            onClick={handleCheckForUpdates}
+            disabled={updateStatus === 'checking' || updateStatus === 'updating'}
+            className={cn(
+              "rounded-xl gap-2 flex-1",
+              darkMode
+                ? "bg-gray-700 hover:bg-gray-600 text-white border-gray-600"
+                : "bg-white hover:bg-gray-50 text-gray-700 border-gray-300"
+            )}
+            variant="outline"
+          >
+            {updateStatus === 'checking' ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Checking...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4" />
+                Check for Updates
+              </>
+            )}
+          </Button>
+
+          <Button
+            onClick={handleForceUpdate}
+            disabled={updateStatus === 'updating'}
+            className="rounded-xl text-white gap-2 flex-1"
+            style={{ backgroundColor: currentTheme.primary }}
+          >
+            {updateStatus === 'updating' ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Updating...
+              </>
+            ) : updateStatus === 'found' ? (
+              <>
+                <Download className="w-4 h-4" />
+                Update Now
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4" />
+                Force Refresh
+              </>
+            )}
+          </Button>
+        </div>
+
+        <p className={cn(
+          "text-xs mt-3",
+          darkMode ? "text-gray-500" : "text-gray-400"
+        )}>
+          Force Refresh will clear all cached data and reload the app with the latest version from the server. Your login session and saved settings will not be affected.
+        </p>
       </GlassCard>
     </div>
   );
