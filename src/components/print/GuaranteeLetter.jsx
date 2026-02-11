@@ -27,8 +27,8 @@ export default function GuaranteeLetter({ account, assistance, currentUser }) {
     <div className="print-content bg-white text-black p-6 max-w-[8.5in] mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10pt', minHeight: '5.5in' }}>
       {/* Header */}
       <div className="flex items-start gap-3 mb-4 pb-3 border-b-2 border-gray-800">
-        <img 
-          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/696dc38131ba35d0783e445b/2d46c5743_image.png"
+        <img
+          src="/logo.png"
           alt="Madrid Seal"
           className="object-contain"
           style={{ width: '60px', height: '60px' }}
@@ -43,6 +43,12 @@ export default function GuaranteeLetter({ account, assistance, currentUser }) {
           <p>Form 4</p>
           <p className="font-semibold mt-1">{assistance?.gl_number || 'MP-GL-____'}</p>
         </div>
+        <img
+          src="/mp.png"
+          alt="Madrid Palamboon Center"
+          className="object-contain"
+          style={{ width: '60px', height: '60px' }}
+        />
       </div>
 
       {/* Title */}
@@ -85,11 +91,67 @@ export default function GuaranteeLetter({ account, assistance, currentUser }) {
         <div className="bg-blue-50 p-3 border-l-4 border-blue-400 mb-3">
           <p className="text-xs font-semibold text-gray-700 mb-1">Medicines Requested:</p>
           {Array.isArray(assistance.medicines) && typeof assistance.medicines[0] === 'object' ? (
-            <ul className="text-xs text-gray-700 space-y-0.5 ml-3">
-              {assistance.medicines.map((med, i) => (
-                <li key={i}>{med.name} - <span className="font-semibold">Qty: {med.quantity}</span></li>
-              ))}
-            </ul>
+            <>
+              <table className="w-full text-xs text-gray-700 mt-1" style={{ borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                    <th className="text-left py-1 font-semibold">Medicine</th>
+                    <th className="text-center py-1 font-semibold">Qty</th>
+                    {assistance.medicines.some(m => m.unit) && (
+                      <th className="text-center py-1 font-semibold">Unit</th>
+                    )}
+                    {assistance.medicines.some(m => m.price) && (
+                      <>
+                        <th className="text-right py-1 font-semibold">Price</th>
+                        <th className="text-right py-1 font-semibold">Subtotal</th>
+                      </>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {assistance.medicines.map((med, i) => {
+                    const subtotal = med.quantity && med.price
+                      ? parseFloat(med.quantity) * parseFloat(med.price)
+                      : null;
+                    return (
+                      <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td className="py-1">{med.name}</td>
+                        <td className="py-1 text-center">{med.quantity || '-'}</td>
+                        {assistance.medicines.some(m => m.unit) && (
+                          <td className="py-1 text-center">{med.unit || '-'}</td>
+                        )}
+                        {assistance.medicines.some(m => m.price) && (
+                          <>
+                            <td className="py-1 text-right">
+                              {med.price ? `₱${parseFloat(med.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '-'}
+                            </td>
+                            <td className="py-1 text-right font-semibold">
+                              {subtotal !== null ? `₱${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '-'}
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                {assistance.medicines.some(m => m.price) && (() => {
+                  const grandTotal = assistance.medicines.reduce((sum, m) => {
+                    if (m.quantity && m.price) return sum + parseFloat(m.quantity) * parseFloat(m.price);
+                    return sum;
+                  }, 0);
+                  return grandTotal > 0 ? (
+                    <tfoot>
+                      <tr style={{ borderTop: '2px solid #94a3b8' }}>
+                        <td colSpan={assistance.medicines.some(m => m.unit) ? 3 : 2} className="py-1 text-right font-bold">Total:</td>
+                        <td className="py-1 text-right font-bold" colSpan={2}>
+                          ₱{grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  ) : null;
+                })()}
+              </table>
+            </>
           ) : (
             <p className="text-xs text-gray-700 leading-relaxed">{assistance.medicines.join(', ')}</p>
           )}

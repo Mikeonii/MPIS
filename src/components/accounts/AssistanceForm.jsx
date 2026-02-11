@@ -45,6 +45,8 @@ export default function AssistanceForm({
   
   const [medicineInput, setMedicineInput] = useState({});
   const [medicineQuantity, setMedicineQuantity] = useState({});
+  const [medicineUnit, setMedicineUnit] = useState({});
+  const [medicinePrice, setMedicinePrice] = useState({});
   const [suggestedMedicines, setSuggestedMedicines] = useState([]);
 
   const { data: pharmacies = [] } = useQuery({
@@ -196,18 +198,36 @@ export default function AssistanceForm({
   const addMedicine = (index, medicine, quantity) => {
     if (!medicine.trim()) return;
     const qty = quantity || medicineQuantity[index] || '1';
+    const unit = medicineUnit[index] || '';
+    const price = medicinePrice[index] || '';
     setLocalAssistances(prev => {
       const updated = [...prev];
-      const exists = updated[index].medicines.find(m => 
+      const exists = updated[index].medicines.find(m =>
         (typeof m === 'object' && m.name === medicine) || m === medicine
       );
       if (!exists) {
-        updated[index].medicines = [...updated[index].medicines, { name: medicine, quantity: qty }];
+        updated[index].medicines = [...updated[index].medicines, {
+          name: medicine,
+          quantity: qty,
+          unit: unit,
+          price: price ? parseFloat(price) : null
+        }];
       }
       return updated;
     });
     setMedicineInput({ ...medicineInput, [index]: '' });
     setMedicineQuantity({ ...medicineQuantity, [index]: '' });
+    setMedicineUnit({ ...medicineUnit, [index]: '' });
+    setMedicinePrice({ ...medicinePrice, [index]: '' });
+  };
+
+  const getMedicineTotal = (medicines) => {
+    return medicines.reduce((sum, med) => {
+      if (typeof med === 'object' && med.price && med.quantity) {
+        return sum + (parseFloat(med.quantity) || 0) * (parseFloat(med.price) || 0);
+      }
+      return sum;
+    }, 0);
   };
 
   const removeMedicine = (index, medicineToRemove) => {
@@ -252,32 +272,44 @@ export default function AssistanceForm({
       setShowIneligibilityDialog(true);
       return;
     }
-    
-    const validAssistances = localAssistances.filter(a => a.type_of_assistance && a.amount && a.source_of_funds_id);
-    
-    if (validAssistances.length === 0) {
-      toast.error('Please fill in all required fields including source of funds');
-      return;
-    }
-    
-    // Validate available funds
-    for (const assistance of validAssistances) {
-      const source = fundsources.find(s => String(s.id) === String(assistance.source_of_funds_id));
-      if (!source) {
-        toast.error('Invalid source of funds selected');
+
+    // Validate each assistance entry for missing required fields
+    for (let i = 0; i < localAssistances.length; i++) {
+      const a = localAssistances[i];
+      const label = localAssistances.length > 1 ? ` (Assistance #${i + 1})` : '';
+      const missing = [];
+
+      if (!a.type_of_assistance) missing.push('Type of Assistance');
+      if (!a.amount || parseFloat(a.amount) <= 0) missing.push('Amount');
+      if (!a.source_of_funds_id) missing.push('Source of Funds');
+      if (!a.date_rendered) missing.push('Date Rendered');
+
+      if (missing.length > 0) {
+        toast.error(`Missing required fields${label}: ${missing.join(', ')}`);
         return;
       }
-      
+    }
+
+    // Validate available funds
+    for (let i = 0; i < localAssistances.length; i++) {
+      const assistance = localAssistances[i];
+      const label = localAssistances.length > 1 ? ` (Assistance #${i + 1})` : '';
+      const source = fundsources.find(s => String(s.id) === String(assistance.source_of_funds_id));
+      if (!source) {
+        toast.error(`Invalid source of funds selected${label}`);
+        return;
+      }
+
       const requestedAmount = parseFloat(assistance.amount);
       if (requestedAmount > source.amount_remaining) {
         toast.error(
-          `Insufficient funds in "${source.source_name}". Available: ₱${source.amount_remaining.toLocaleString()}, Requested: ₱${requestedAmount.toLocaleString()}`
+          `Insufficient funds in "${source.source_name}"${label}. Available: ₱${source.amount_remaining.toLocaleString()}, Requested: ₱${requestedAmount.toLocaleString()}`
         );
         return;
       }
     }
-    
-    onSave(validAssistances);
+
+    onSave(localAssistances);
   };
 
   const inputClasses = cn(
@@ -495,7 +527,7 @@ export default function AssistanceForm({
               <div className="mt-4">
                 <Label className={labelClasses}>Medicines List</Label>
                 <div className="space-y-2">
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Input
                       value={medicineInput[index] || ''}
                       onChange={(e) => setMedicineInput({ ...medicineInput, [index]: e.target.value })}
@@ -506,7 +538,7 @@ export default function AssistanceForm({
                         }
                       }}
                       placeholder="Medicine name..."
-                      className={inputClasses}
+                      className={cn(inputClasses, "flex-1 min-w-[150px]")}
                       list={`medicine-suggestions-${index}`}
                     />
                     <datalist id={`medicine-suggestions-${index}`}>
@@ -524,7 +556,40 @@ export default function AssistanceForm({
                         }
                       }}
                       placeholder="Qty"
-                      className={cn(inputClasses, "w-24")}
+                      className={cn(inputClasses, "w-20")}
+                    />
+                    <Select
+                      value={medicineUnit[index] || ''}
+                      onValueChange={(v) => setMedicineUnit({ ...medicineUnit, [index]: v })}
+                    >
+                      <SelectTrigger className={cn(inputClasses, "w-28")}>
+                        <SelectValue placeholder="Unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="tablet">Tablet</SelectItem>
+                        <SelectItem value="capsule">Capsule</SelectItem>
+                        <SelectItem value="bottle">Bottle</SelectItem>
+                        <SelectItem value="box">Box</SelectItem>
+                        <SelectItem value="vial">Vial</SelectItem>
+                        <SelectItem value="tube">Tube</SelectItem>
+                        <SelectItem value="sachet">Sachet</SelectItem>
+                        <SelectItem value="piece">Piece</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      value={medicinePrice[index] || ''}
+                      onChange={(e) => setMedicinePrice({ ...medicinePrice, [index]: e.target.value })}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addMedicine(index, medicineInput[index]);
+                        }
+                      }}
+                      placeholder="Price ₱"
+                      className={cn(inputClasses, "w-28")}
+                      min="0"
+                      step="0.01"
                     />
                     <Button
                       type="button"
@@ -535,7 +600,7 @@ export default function AssistanceForm({
                       Add
                     </Button>
                   </div>
-                  
+
                   {suggestedMedicines.length > 0 && medicineInput[index] && (
                     <div className={cn(
                       "flex flex-wrap gap-1 p-2 rounded-lg max-h-20 overflow-y-auto",
@@ -551,7 +616,7 @@ export default function AssistanceForm({
                             onClick={() => addMedicine(index, med)}
                             className={cn(
                               "px-2 py-1 text-xs rounded-md transition-colors",
-                              darkMode 
+                              darkMode
                                 ? "bg-gray-700 hover:bg-gray-600 text-gray-300"
                                 : "bg-white hover:bg-gray-100 text-gray-700"
                             )}
@@ -561,27 +626,91 @@ export default function AssistanceForm({
                         ))}
                     </div>
                   )}
-                  
-                  <div className="flex flex-wrap gap-2">
-                    {assistance.medicines.map((med, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm text-white"
-                        style={{ backgroundColor: currentTheme.primary }}
-                      >
-                        <span>
-                          {typeof med === 'object' ? `${med.name} (Qty: ${med.quantity})` : med}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeMedicine(index, typeof med === 'object' ? med.name : med)}
-                          className="hover:opacity-75"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+
+                  {/* Medicine items */}
+                  {assistance.medicines.length > 0 && (
+                    <div className={cn(
+                      "rounded-xl border p-3 space-y-2",
+                      darkMode ? "bg-gray-800/30 border-gray-700" : "bg-gray-50/50 border-gray-200"
+                    )}>
+                      {assistance.medicines.map((med, i) => {
+                        const medName = typeof med === 'object' ? med.name : med;
+                        const medQty = typeof med === 'object' ? med.quantity : null;
+                        const medUnit = typeof med === 'object' ? med.unit : null;
+                        const medPrice = typeof med === 'object' ? med.price : null;
+                        const subtotal = medQty && medPrice ? (parseFloat(medQty) * parseFloat(medPrice)) : null;
+
+                        return (
+                          <div
+                            key={i}
+                            className={cn(
+                              "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm",
+                              darkMode ? "bg-gray-800" : "bg-white"
+                            )}
+                          >
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <span className="font-medium truncate" style={{ color: currentTheme.primary }}>
+                                {medName}
+                              </span>
+                              <span className={cn("text-xs", darkMode ? "text-gray-400" : "text-gray-500")}>
+                                {medQty && `Qty: ${medQty}`}
+                                {medUnit && ` ${medUnit}${parseFloat(medQty) > 1 ? 's' : ''}`}
+                              </span>
+                              {medPrice && (
+                                <span className={cn("text-xs", darkMode ? "text-gray-400" : "text-gray-500")}>
+                                  @ ₱{parseFloat(medPrice).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </span>
+                              )}
+                            </div>
+                            {subtotal !== null && (
+                              <span className={cn(
+                                "text-xs font-semibold whitespace-nowrap",
+                                darkMode ? "text-green-400" : "text-green-600"
+                              )}>
+                                ₱{subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeMedicine(index, medName)}
+                              className="text-red-400 hover:text-red-500 flex-shrink-0"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        );
+                      })}
+
+                      {/* Medicine Total & Use as Amount */}
+                      {(() => {
+                        const total = getMedicineTotal(assistance.medicines);
+                        if (total <= 0) return null;
+                        return (
+                          <div className={cn(
+                            "flex items-center justify-between pt-2 mt-1 border-t",
+                            darkMode ? "border-gray-700" : "border-gray-200"
+                          )}>
+                            <span className={cn(
+                              "text-sm font-semibold",
+                              darkMode ? "text-white" : "text-gray-900"
+                            )}>
+                              Medicine Total: ₱{total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateAssistance(index, 'amount', total.toFixed(2))}
+                              className="text-xs rounded-lg"
+                              style={{ borderColor: currentTheme.primary, color: currentTheme.primary }}
+                            >
+                              Use as Amount
+                            </Button>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

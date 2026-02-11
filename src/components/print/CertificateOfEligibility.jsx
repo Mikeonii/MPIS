@@ -26,8 +26,8 @@ export default function CertificateOfEligibility({ account, assistance, currentU
     <div className="print-content bg-white text-black p-6 max-w-[8.5in] mx-auto" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10pt', minHeight: '5.5in' }}>
       {/* Header */}
       <div className="flex items-start gap-3 mb-4 pb-3 border-b-2 border-gray-800">
-        <img 
-          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/696dc38131ba35d0783e445b/2d46c5743_image.png"
+        <img
+          src="/logo.png"
           alt="Madrid Seal"
           className="object-contain"
           style={{ width: '60px', height: '60px' }}
@@ -42,6 +42,12 @@ export default function CertificateOfEligibility({ account, assistance, currentU
           <p>Form 3</p>
           <p className="font-semibold mt-1">{format(issueDate, 'MMM d, yyyy')}</p>
         </div>
+        <img
+          src="/mp.png"
+          alt="Madrid Palamboon Center"
+          className="object-contain"
+          style={{ width: '60px', height: '60px' }}
+        />
       </div>
 
       {/* Title */}
@@ -72,17 +78,6 @@ export default function CertificateOfEligibility({ account, assistance, currentU
             </div>
           </div>
         </div>
-
-        {assistance?.medicines && assistance.medicines.length > 0 && (
-          <div className="bg-blue-50 p-3 border-l-4 border-blue-400">
-            <p className="text-xs font-semibold text-gray-700 mb-1">Medicines Requested:</p>
-            <div className="text-xs text-gray-700 leading-relaxed">
-              {Array.isArray(assistance.medicines) && typeof assistance.medicines[0] === 'object'
-                ? assistance.medicines.map((m, i) => `${m.name} (${m.quantity})`).join(', ')
-                : assistance.medicines.join(', ')}
-            </div>
-          </div>
-        )}
 
         <p className="text-xs text-gray-600 italic mt-2">
           This certificate is valid for medical assistance purposes only and subject to verification by authorized personnel.

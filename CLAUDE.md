@@ -96,6 +96,44 @@ Tailwind CSS with HSL CSS variables for theming. Glass morphism design (semi-tra
 - **Target Sectors**: FHONA, WEDC, YOUTH, PWD, SC, PLHIV, CHILD
 - Accounts track family composition, representative info, and assistance history
 
+## Feature Locks (IMPORTANT - Read Before Modifying Code)
+
+A feature lock inventory is maintained at `.feature-locks.json`. Before modifying any file, check if it is covered by an active lock. Locked files must NOT be edited without explicit user approval to unlock.
+
+### Active Locks
+
+**LOCK-001: Print Form Headers - Dual Logo Layout**
+- **Status**: LOCKED (strict)
+- **Locked files** (header sections only):
+  - `src/components/print/GeneralIntakeSheet.jsx` (lines 41-59)
+  - `src/components/print/CertificateOfEligibility.jsx` (lines 28-51)
+  - `src/components/print/GuaranteeLetter.jsx` (lines 29-52)
+- **Protected assets**: `public/logo.png`, `public/mp.png`
+- **Reason**: Finalized dual-logo header layout (Madrid Seal left, MP logo right). Do NOT modify header markup, image sources, or logo styling without explicit unlock approval.
+- **Scope**: Only the header sections are locked. Body and footer content may be modified freely.
+- **Shared resource warning**: `public/logo.png` is also used by `Layout.jsx` and `Login.jsx`. Do NOT rename or remove it.
+
+**LOCK-002: Medicine Price and Unit per Assistance**
+- **Status**: LOCKED (strict)
+- **Locked files and sections**:
+  - `../mpis-api/app/Http/Controllers/AssistanceController.php` (lines 52-58) -- medicines.*.unit and medicines.*.price validation
+  - `../mpis-api/app/Models/Assistance.php` (lines 14, 29) -- medicines fillable field and JSON array cast
+  - `src/components/accounts/AssistanceForm.jsx` (lines 48-49, 198-231, 549-581, 619-701) -- medicineUnit/medicinePrice state, addMedicine() with unit/price, getMedicineTotal(), unit dropdown, price input, medicine item display with subtotals, "Use as Amount" button
+  - `src/pages/AccountView.jsx` (lines 567-606) -- medicine details row in Assistance History showing name, qty, unit, price, subtotal
+  - `src/components/print/GuaranteeLetter.jsx` (lines 89-159) -- medicines table with Qty/Unit/Price/Subtotal columns and Grand Total (body only, header locked by LOCK-001)
+  - `src/components/print/CertificateOfEligibility.jsx` (lines 59-85) -- body section with medicines intentionally REMOVED; do NOT re-add medicines here
+  - `src/pages/FlexibleReports.jsx` (lines 55-69, 96-103, 251-261, 554-562) -- medicine extraction, filtering, and display for object format { name, quantity, unit, price }
+- **Data contract**: Medicines stored as JSON array of `{ name, quantity, unit, price }` objects. All display code handles both this format and legacy string format.
+- **Reason**: Full-stack medicine price/unit feature finalized across backend validation, form input, display, print, and reports. Locking to prevent regression of the structured object format, calculation logic, and the intentional removal of medicines from the Certificate of Eligibility.
+- **Multi-lock warning**: `GuaranteeLetter.jsx` and `CertificateOfEligibility.jsx` each have TWO active locks (LOCK-001 for header, LOCK-002 for body sections). Check BOTH locks before modifying these files.
+
+### Lock Enforcement Rules
+1. Before editing any file listed in `.feature-locks.json`, check for active locks on the specific sections being modified
+2. If a locked section would be affected, STOP and warn the user before proceeding
+3. Require explicit "unlock" confirmation before making changes to locked sections
+4. After unlocking and making changes, remind the user to re-lock if appropriate
+5. Files with multiple locks (GuaranteeLetter.jsx, CertificateOfEligibility.jsx) require checking ALL applicable locks before any modification
+
 ## Legacy (deprecated)
 - `server/` directory (old Express + SQLite backend) — replaced by `mpis-api/`
 - `src/api/base44Client.js` — unused, safe to delete

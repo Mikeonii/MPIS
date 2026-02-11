@@ -56,7 +56,13 @@ export default function FlexibleReports() {
     const unique = new Set();
     assistances.forEach(a => {
       if (a.medicines && Array.isArray(a.medicines)) {
-        a.medicines.forEach(m => unique.add(m));
+        a.medicines.forEach(m => {
+          if (typeof m === 'object' && m.name) {
+            unique.add(m.name);
+          } else if (typeof m === 'string') {
+            unique.add(m);
+          }
+        });
       }
     });
     return Array.from(unique).sort();
@@ -88,8 +94,11 @@ export default function FlexibleReports() {
     }
 
     if (filters.medicine) {
-      results = results.filter(r => 
-        r.medicines && Array.isArray(r.medicines) && r.medicines.includes(filters.medicine)
+      results = results.filter(r =>
+        r.medicines && Array.isArray(r.medicines) && r.medicines.some(m =>
+          (typeof m === 'object' && m.name === filters.medicine) ||
+          (typeof m === 'string' && m === filters.medicine)
+        )
       );
     }
 
@@ -243,7 +252,11 @@ export default function FlexibleReports() {
                   {result.medical_subcategory || '-'}
                   {result.medicines && result.medicines.length > 0 && (
                     <div style={{ fontSize: '8pt', color: '#666', marginTop: '2px' }}>
-                      {result.medicines.join(', ')}
+                      {result.medicines.map(m =>
+                        typeof m === 'object'
+                          ? `${m.name}${m.quantity ? ` x${m.quantity}` : ''}${m.unit ? ` ${m.unit}` : ''}${m.price ? ` @₱${parseFloat(m.price).toFixed(2)}` : ''}`
+                          : m
+                      ).join(', ')}
                     </div>
                   )}
                 </td>
@@ -540,7 +553,11 @@ export default function FlexibleReports() {
                       {result.medical_subcategory || '-'}
                       {result.medicines && result.medicines.length > 0 && (
                         <div className="text-xs mt-1">
-                          {result.medicines.join(', ')}
+                          {result.medicines.map(m =>
+                            typeof m === 'object'
+                              ? `${m.name}${m.quantity ? ` x${m.quantity}` : ''}${m.unit ? ` ${m.unit}` : ''}${m.price ? ` @₱${parseFloat(m.price).toFixed(2)}` : ''}`
+                              : m
+                          ).join(', ')}
                         </div>
                       )}
                     </td>

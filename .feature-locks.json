@@ -1,0 +1,256 @@
+{
+  "locks": [
+    {
+      "lockId": "LOCK-001",
+      "featureName": "Print Form Headers - Dual Logo Layout",
+      "description": "Consistent dual-logo header layout across all three print form components. The Madrid municipality seal (logo.png) appears on the left side and the Madrid Palamboon Center logo (mp.png) appears on the right side of each form header. This replaced previously broken Supabase external URL references with locally served static assets.",
+      "lockedAt": "2026-02-11T00:00:00.000Z",
+      "reason": "Headers have been finalized with correct logo placement, local asset references, and consistent layout across all three print forms. Locking to prevent regression of the dual-logo header design and accidental reintroduction of broken external image URLs.",
+      "lockType": "strict",
+      "components": {
+        "pages": [],
+        "printComponents": [
+          "src/components/print/GeneralIntakeSheet.jsx",
+          "src/components/print/CertificateOfEligibility.jsx",
+          "src/components/print/GuaranteeLetter.jsx"
+        ],
+        "services": [],
+        "stores": [],
+        "utilities": [],
+        "types": [],
+        "hooks": []
+      },
+      "staticAssets": [
+        "public/logo.png",
+        "public/mp.png"
+      ],
+      "lockedSections": {
+        "GeneralIntakeSheet.jsx": {
+          "lines": "41-59",
+          "description": "Header block: flex container with justify-between layout. Left side has logo.png (w-16 h-16 rounded-full) + municipality text. Right side has mp.png (w-16 h-16 object-contain)."
+        },
+        "CertificateOfEligibility.jsx": {
+          "lines": "28-51",
+          "description": "Header block: flex container with border-b-2. Left has logo.png (60x60), center has municipality text + Form 3 info, right has mp.png (60x60)."
+        },
+        "GuaranteeLetter.jsx": {
+          "lines": "29-52",
+          "description": "Header block: flex container with border-b-2. Left has logo.png (60x60), center has municipality text + Form 4 info, right has mp.png (60x60)."
+        }
+      },
+      "dependencies": {
+        "external": [
+          "react",
+          "date-fns"
+        ],
+        "internal": []
+      },
+      "consumers": [
+        "src/pages/AccountView.jsx"
+      ],
+      "sharedResources": [
+        {
+          "file": "public/logo.png",
+          "alsoUsedBy": [
+            "src/Layout.jsx",
+            "src/pages/Login.jsx"
+          ],
+          "warning": "This image is shared with the app sidebar and login page. Replacing or renaming it will break those components as well."
+        },
+        {
+          "file": "public/mp.png",
+          "alsoUsedBy": [],
+          "warning": "Currently used exclusively by the three print form headers. Renaming or removing this file will break all three form headers."
+        }
+      ],
+      "criticalPaths": [
+        "AccountView -> Print GeneralIntakeSheet -> Header with dual logos",
+        "AccountView -> Print CertificateOfEligibility -> Header with dual logos",
+        "AccountView -> Print GuaranteeLetter -> Header with dual logos"
+      ],
+      "unlockRequiresApproval": true,
+      "notes": [
+        "ApplicationForm.jsx (the 4th print component) does NOT currently use either logo. It is NOT part of this lock.",
+        "The header sections are the ONLY locked portions. Body content and footer sections of these forms are NOT locked and may be modified freely.",
+        "Any change to Tailwind print-related CSS (@media print rules) should be reviewed against these headers for potential side effects."
+      ]
+    },
+    {
+      "lockId": "LOCK-002",
+      "featureName": "Medicine Price and Unit per Assistance",
+      "description": "Full-stack feature that extends the medicines data model from simple strings to structured objects with { name, quantity, unit, price } format. Includes backend validation for the new fields, form UI with unit dropdown and price input, per-item subtotals, running medicine total with 'Use as Amount' button, medicine details display in Assistance History, tabular medicine rendering in the Guarantee Letter print form, and updated medicine extraction/filtering/display in Flexible Reports. The Certificate of Eligibility had its medicines section intentionally removed as part of this feature (only the Guarantee Letter shows medicines now).",
+      "lockedAt": "2026-02-11T00:00:00.000Z",
+      "reason": "Medicine price/unit feature has been fully implemented and tested across all layers (backend validation, form input, display, print, reports). Locking to prevent regression of the structured medicine object format { name, quantity, unit, price }, the calculation logic (subtotals, grand totals), the 'Use as Amount' convenience feature, and the intentional removal of medicines from the Certificate of Eligibility.",
+      "lockType": "strict",
+      "components": {
+        "pages": [
+          "src/pages/AccountView.jsx",
+          "src/pages/FlexibleReports.jsx"
+        ],
+        "printComponents": [
+          "src/components/print/GuaranteeLetter.jsx",
+          "src/components/print/CertificateOfEligibility.jsx"
+        ],
+        "formComponents": [
+          "src/components/accounts/AssistanceForm.jsx"
+        ],
+        "backendControllers": [
+          "../mpis-api/app/Http/Controllers/AssistanceController.php"
+        ],
+        "backendModels": [
+          "../mpis-api/app/Models/Assistance.php"
+        ],
+        "services": [],
+        "stores": [],
+        "utilities": [],
+        "types": [],
+        "hooks": []
+      },
+      "lockedSections": {
+        "AssistanceController.php": {
+          "lines": "52-58",
+          "description": "Validation rules in the store() method for medicines array: medicines.*.name (required_with, string), medicines.*.quantity (nullable, string), medicines.*.unit (nullable, string), medicines.*.price (nullable, numeric, min:0). These rules enforce the structured medicine object format on the backend."
+        },
+        "Assistance.php": {
+          "lines": "14,29",
+          "description": "The 'medicines' field in the $fillable array (line 14) and the 'medicines' => 'array' cast (line 29). These ensure the medicines JSON column accepts and auto-encodes/decodes the { name, quantity, unit, price } object array format."
+        },
+        "AssistanceForm.jsx": {
+          "sections": [
+            {
+              "lines": "48-49",
+              "description": "State declarations for medicineUnit and medicinePrice. These per-assistance-index state objects track the current unit dropdown selection and price input value before a medicine is added."
+            },
+            {
+              "lines": "198-222",
+              "description": "addMedicine() function. Captures the current medicineUnit and medicinePrice state values and constructs the structured medicine object { name, quantity, unit, price } when adding to the medicines array. Resets all four input states (name, quantity, unit, price) after adding."
+            },
+            {
+              "lines": "224-231",
+              "description": "getMedicineTotal() helper function. Reduces the medicines array to sum (quantity * price) for all medicine objects that have both price and quantity, returning the grand total."
+            },
+            {
+              "lines": "549-581",
+              "description": "Unit dropdown (Select component with 8 unit options: tablet, capsule, bottle, box, vial, tube, sachet, piece) and Price input field (number input with peso placeholder, min:0, step:0.01). These are the form UI controls for entering unit and price per medicine."
+            },
+            {
+              "lines": "619-701",
+              "description": "Medicine item display section. Shows each medicine with name, quantity, unit (with pluralization), and price. Displays per-item subtotal (qty * price) in green. Below the item list: running Medicine Total and 'Use as Amount' button that auto-fills the assistance amount field with the computed medicine total."
+            }
+          ]
+        },
+        "AccountView.jsx": {
+          "lines": "567-606",
+          "description": "Medicine details row in the Assistance History table. Renders below each assistance row when medicines exist. For object-format medicines: displays name, quantity with unit (pluralized), price formatted as peso currency, and computed subtotal (qty * price). For legacy string-format medicines: displays as comma-separated text. Uses pipe separator between medicine entries."
+        },
+        "GuaranteeLetter.jsx": {
+          "lines": "89-159",
+          "description": "Medicines section in the Guarantee Letter body (NOT the header, which is locked under LOCK-001). Renders as a structured table with conditional columns: Medicine (always), Qty (always), Unit (if any medicine has unit), Price (if any medicine has price), Subtotal (if any medicine has price). Includes a Grand Total footer row when price data exists. Falls back to comma-separated text for legacy string-format medicines."
+        },
+        "CertificateOfEligibility.jsx": {
+          "lines": "59-85",
+          "description": "Body content section of the Certificate of Eligibility. The medicines section was intentionally REMOVED from this form as part of the feature implementation. Only the Guarantee Letter displays medicines now. This removal must be preserved -- do NOT re-add a medicines section to this component."
+        },
+        "FlexibleReports.jsx": {
+          "sections": [
+            {
+              "lines": "55-69",
+              "description": "medicines useMemo block. Extracts unique medicine names from all assistances, handling both object format (typeof m === 'object' && m.name) and legacy string format (typeof m === 'string'). Populates the medicine filter dropdown."
+            },
+            {
+              "lines": "96-103",
+              "description": "Medicine filter logic in filteredResults useMemo. Filters assistances by selected medicine name, handling both object format (m.name === filters.medicine) and string format (m === filters.medicine)."
+            },
+            {
+              "lines": "251-261",
+              "description": "Print version medicine display in the Details column. Formats each medicine as 'name x{qty} {unit} @peso{price}' for object format, or plain string for legacy format. Comma-separated."
+            },
+            {
+              "lines": "554-562",
+              "description": "Screen version medicine display in the Subcategory/Details column. Same formatting as print version: 'name x{qty} {unit} @peso{price}' for object format, plain string for legacy."
+            }
+          ]
+        }
+      },
+      "dataContract": {
+        "format": "Medicine objects stored as JSON array in the medicines column",
+        "schema": {
+          "name": "string (required) - Medicine name",
+          "quantity": "string (optional) - Quantity amount, defaults to '1'",
+          "unit": "string (optional) - Unit of measure (tablet, capsule, bottle, box, vial, tube, sachet, piece)",
+          "price": "number|null (optional) - Price per unit in PHP peso"
+        },
+        "example": [
+          { "name": "Amoxicillin", "quantity": "10", "unit": "capsule", "price": 12.50 },
+          { "name": "Paracetamol", "quantity": "1", "unit": "bottle", "price": 85.00 }
+        ],
+        "backwardCompatibility": "All display code handles both the new object format AND legacy string format (typeof m === 'string') for medicines created before this feature."
+      },
+      "dependencies": {
+        "external": [
+          "react",
+          "@tanstack/react-query",
+          "date-fns",
+          "sonner",
+          "lucide-react",
+          "@radix-ui/react-select"
+        ],
+        "internal": [
+          "src/api/entities.js (Assistance entity - .create(), .list(), .filter())",
+          "src/components/ui/select.jsx (Shadcn Select component for unit dropdown)",
+          "src/components/ui/input.jsx (Shadcn Input for price field)",
+          "src/components/ui/button.jsx (Shadcn Button for 'Use as Amount')"
+        ]
+      },
+      "consumers": [
+        "src/pages/AccountView.jsx (renders AssistanceForm and displays medicine details in history)",
+        "src/components/print/GuaranteeLetter.jsx (prints medicine table on Guarantee Letter)",
+        "src/pages/FlexibleReports.jsx (filters and displays medicines in reports)"
+      ],
+      "sharedResources": [
+        {
+          "file": "src/api/entities.js",
+          "alsoUsedBy": ["All pages that interact with Assistance records"],
+          "warning": "The Assistance entity .create() method sends the medicines array to the backend. Changing the entity interface or the medicines field name would break this feature."
+        },
+        {
+          "file": "../mpis-api/app/Models/Assistance.php",
+          "alsoUsedBy": ["AssistanceController (all CRUD methods)", "Account cascade deletes"],
+          "warning": "The medicines JSON cast on the Assistance model is critical to this feature. Removing it or changing the cast type would corrupt medicine data storage and retrieval."
+        },
+        {
+          "file": "src/components/print/GuaranteeLetter.jsx",
+          "alsoUsedBy": ["LOCK-001 (header section only)"],
+          "warning": "This file has TWO active locks: LOCK-001 protects lines 29-52 (header), LOCK-002 protects lines 89-159 (medicines body). Verify which lock applies before making changes."
+        },
+        {
+          "file": "src/components/print/CertificateOfEligibility.jsx",
+          "alsoUsedBy": ["LOCK-001 (header section only)"],
+          "warning": "This file has TWO active locks: LOCK-001 protects lines 28-51 (header), LOCK-002 protects lines 59-85 (body without medicines -- medicines removal must be preserved)."
+        }
+      ],
+      "criticalPaths": [
+        "AssistanceForm -> addMedicine() -> builds { name, qty, unit, price } -> POST /api/assistances -> AssistanceController.store() validates -> Assistance model JSON cast -> DB",
+        "AccountView -> Assistance History table -> medicine details row -> displays name, qty, unit, price, subtotal",
+        "AccountView -> Print GuaranteeLetter -> medicines table with Qty/Unit/Price/Subtotal columns + Grand Total",
+        "FlexibleReports -> medicines useMemo extraction -> medicine filter dropdown -> filtered display in both print and screen tables",
+        "AssistanceForm -> getMedicineTotal() -> 'Use as Amount' button -> auto-fills amount field"
+      ],
+      "unlockRequiresApproval": true,
+      "notes": [
+        "The medicine data format { name, quantity, unit, price } is the canonical schema. All frontend display code must handle BOTH this format and the legacy string format for backward compatibility.",
+        "The 'Use as Amount' button in AssistanceForm computes the total from getMedicineTotal() and writes it to the amount field. This is a convenience feature, not a hard requirement -- the amount can still be manually entered.",
+        "GuaranteeLetter.jsx has TWO active locks on different sections: LOCK-001 (header, lines 29-52) and LOCK-002 (medicines body, lines 89-159). Always check BOTH locks before modifying this file.",
+        "CertificateOfEligibility.jsx has TWO active locks: LOCK-001 (header) and LOCK-002 (body -- specifically the absence of medicines). Do NOT re-add a medicines section to the Certificate of Eligibility.",
+        "The unit dropdown options (tablet, capsule, bottle, box, vial, tube, sachet, piece) in AssistanceForm are the canonical list. Adding or removing unit options requires unlocking.",
+        "The GuaranteeLetter medicines table conditionally shows Unit and Price/Subtotal columns only when at least one medicine has those fields populated. This adaptive layout must be preserved.",
+        "FlexibleReports handles medicine extraction and filtering for both object and string formats. Any change to the medicine data format must be reflected in both the extraction (lines 55-69) and filter (lines 96-103) logic."
+      ]
+    }
+  ],
+  "metadata": {
+    "version": "1.1.0",
+    "lastUpdated": "2026-02-11T00:00:00.000Z",
+    "totalLocks": 2
+  }
+}

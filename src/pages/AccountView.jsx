@@ -75,7 +75,6 @@ export default function AccountView() {
     mutationFn: (data) => Assistance.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assistances', accountId] });
-      toast.success('Assistance saved successfully');
     },
   });
 
@@ -92,17 +91,26 @@ export default function AccountView() {
   };
 
   const handleSaveAssistance = async (assistanceData) => {
-    for (let i = 0; i < assistanceData.length; i++) {
-      const assistance = assistanceData[i];
+    try {
+      for (let i = 0; i < assistanceData.length; i++) {
+        const assistance = assistanceData[i];
 
-      await createAssistanceMutation.mutateAsync({
-        ...assistance,
-        account_id: accountId,
-        amount: parseFloat(assistance.amount) || 0
-      });
+        await createAssistanceMutation.mutateAsync({
+          ...assistance,
+          account_id: accountId,
+          amount: parseFloat(assistance.amount) || 0
+        });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['sourceOfFunds'] });
+      toast.success('Assistance saved successfully');
+    } catch (error) {
+      const errors = error?.data?.errors;
+      const message = errors
+        ? Object.values(errors).flat().join(', ')
+        : error?.message || 'Failed to save assistance';
+      toast.error(message);
     }
-
-    queryClient.invalidateQueries({ queryKey: ['sourceOfFunds'] });
   };
 
   const handlePrint = (type, assistance = null) => {
@@ -501,68 +509,110 @@ export default function AccountView() {
                     darkMode ? "divide-gray-700" : "divide-gray-100"
                   )}>
                     {assistances.map((assistance, index) => (
-                      <tr key={assistance.id || index}>
-                        <td className={cn(
-                          "py-3",
-                          darkMode ? "text-gray-300" : "text-gray-600"
-                        )}>
-                          {assistance.date_rendered 
-                            ? format(new Date(assistance.date_rendered), 'MMM d, yyyy')
-                            : format(new Date(assistance.created_date), 'MMM d, yyyy')
-                          }
-                        </td>
-                        <td className="py-3">
-                          <span 
-                            className="text-xs font-medium px-2 py-1 rounded-lg"
-                            style={{ 
-                              backgroundColor: `${currentTheme.primary}20`,
-                              color: currentTheme.primary
-                            }}
-                          >
-                            {assistance.type_of_assistance}
-                          </span>
-                        </td>
-                        <td className={cn(
-                          "py-3 text-right font-semibold",
-                          darkMode ? "text-white" : "text-gray-900"
-                        )}>
-                          ₱{(assistance.amount || 0).toLocaleString()}
-                        </td>
-                        <td className={cn(
-                          "py-3",
-                          darkMode ? "text-gray-300" : "text-gray-600"
-                        )}>
-                          {assistance.pharmacy_name || '-'}
-                        </td>
-                        <td className={cn(
-                          "py-3",
-                          darkMode ? "text-gray-300" : "text-gray-600"
-                        )}>
-                          {assistance.interviewed_by || '-'}
-                        </td>
-                        <td className="py-3 no-print">
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => handlePrint('certificate', assistance)}
-                              size="sm"
-                              variant="outline"
-                              className="text-xs"
+                      <React.Fragment key={assistance.id || index}>
+                        <tr>
+                          <td className={cn(
+                            "py-3",
+                            darkMode ? "text-gray-300" : "text-gray-600"
+                          )}>
+                            {assistance.date_rendered
+                              ? format(new Date(assistance.date_rendered), 'MMM d, yyyy')
+                              : format(new Date(assistance.created_date), 'MMM d, yyyy')
+                            }
+                          </td>
+                          <td className="py-3">
+                            <span
+                              className="text-xs font-medium px-2 py-1 rounded-lg"
+                              style={{
+                                backgroundColor: `${currentTheme.primary}20`,
+                                color: currentTheme.primary
+                              }}
                             >
-                              <FileText className="w-3 h-3 mr-1" />
-                              Certificate
-                            </Button>
-                            <Button
-                              onClick={() => handlePrint('guarantee', assistance)}
-                              size="sm"
-                              variant="outline"
-                              className="text-xs"
-                            >
-                              <FileText className="w-3 h-3 mr-1" />
-                              GL
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
+                              {assistance.type_of_assistance}
+                            </span>
+                          </td>
+                          <td className={cn(
+                            "py-3 text-right font-semibold",
+                            darkMode ? "text-white" : "text-gray-900"
+                          )}>
+                            ₱{(assistance.amount || 0).toLocaleString()}
+                          </td>
+                          <td className={cn(
+                            "py-3",
+                            darkMode ? "text-gray-300" : "text-gray-600"
+                          )}>
+                            {assistance.pharmacy_name || '-'}
+                          </td>
+                          <td className={cn(
+                            "py-3",
+                            darkMode ? "text-gray-300" : "text-gray-600"
+                          )}>
+                            {assistance.interviewed_by || '-'}
+                          </td>
+                          <td className="py-3 no-print">
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => handlePrint('certificate', assistance)}
+                                size="sm"
+                                variant="outline"
+                                className="text-xs"
+                              >
+                                <FileText className="w-3 h-3 mr-1" />
+                                Certificate
+                              </Button>
+                              <Button
+                                onClick={() => handlePrint('guarantee', assistance)}
+                                size="sm"
+                                variant="outline"
+                                className="text-xs"
+                              >
+                                <FileText className="w-3 h-3 mr-1" />
+                                GL
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                        {/* Medicine details row */}
+                        {assistance.medicines && Array.isArray(assistance.medicines) && assistance.medicines.length > 0 && (
+                          <tr>
+                            <td colSpan={6} className="pb-3 pt-0">
+                              <div className={cn(
+                                "ml-4 px-3 py-2 rounded-lg text-xs",
+                                darkMode ? "bg-gray-800/50" : "bg-blue-50/50"
+                              )}>
+                                <span className={cn(
+                                  "font-medium",
+                                  darkMode ? "text-gray-400" : "text-gray-500"
+                                )}>
+                                  Medicines:{' '}
+                                </span>
+                                {assistance.medicines.map((med, mi) => {
+                                  if (typeof med === 'object') {
+                                    const parts = [med.name];
+                                    if (med.quantity) parts.push(`Qty: ${med.quantity}${med.unit ? ` ${med.unit}${parseFloat(med.quantity) > 1 ? 's' : ''}` : ''}`);
+                                    if (med.price) parts.push(`₱${parseFloat(med.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                                    if (med.quantity && med.price) {
+                                      const sub = parseFloat(med.quantity) * parseFloat(med.price);
+                                      parts.push(`= ₱${sub.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                                    }
+                                    return (
+                                      <span key={mi} className={darkMode ? "text-gray-300" : "text-gray-700"}>
+                                        {mi > 0 && ' | '}
+                                        {parts.join(' - ')}
+                                      </span>
+                                    );
+                                  }
+                                  return (
+                                    <span key={mi} className={darkMode ? "text-gray-300" : "text-gray-700"}>
+                                      {mi > 0 && ', '}{med}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     ))}
                     {assistances.length === 0 && (
                       <tr>
