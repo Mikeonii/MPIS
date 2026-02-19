@@ -1,7 +1,22 @@
 import react from '@vitejs/plugin-react'
+import fs from 'fs'
 import path from 'path'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+
+// Plugin to generate version.json so the app can check for updates
+function versionJsonPlugin(version) {
+  return {
+    name: 'version-json',
+    writeBundle({ dir }) {
+      const outDir = dir || 'dist';
+      fs.writeFileSync(
+        path.resolve(outDir, 'version.json'),
+        JSON.stringify({ version, buildTime: new Date().toISOString() })
+      );
+    },
+  };
+}
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -12,12 +27,16 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    versionJsonPlugin(process.env.npm_package_version || '1.0.0'),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,  // We register manually in main.jsx
       workbox: {
         // Precache all build assets (JS, CSS, HTML, images)
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        // SPA fallback: serve index.html for all navigation requests
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//],
         // Runtime caching for API responses
         runtimeCaching: [
           {

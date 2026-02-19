@@ -125,18 +125,16 @@ export default function Settings() {
     checkSwStatus();
   }, []);
 
-  // Check for updates: ask the service worker to check the server for a new SW script
+  // Check for updates: fetch version.json from the server and compare with the running version
   const handleCheckForUpdates = async () => {
     setUpdateStatus('checking');
     try {
+      // 1. Try SW-based detection first
       if ('serviceWorker' in navigator) {
         const registrations = await navigator.serviceWorker.getRegistrations();
         if (registrations.length > 0) {
-          // Force the SW to check the server for a new version
           const registration = registrations[0];
           await registration.update();
-
-          // If there is a waiting or installing worker, a new version is available
           if (registration.waiting || registration.installing) {
             setUpdateStatus('found');
             return;
@@ -144,8 +142,17 @@ export default function Settings() {
         }
       }
 
-      // No new version detected via SW -- compare build timestamps
-      // A simple heuristic: if the page has been open for a while or cached, prompt anyway
+      // 2. Fetch version.json from the server (cache-busted) and compare
+      const currentVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0';
+      const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.version && data.version !== currentVersion) {
+          setUpdateStatus('found');
+          return;
+        }
+      }
+
       setUpdateStatus('not-found');
     } catch {
       setUpdateStatus('error');
