@@ -1,6 +1,19 @@
 {
   "versions": [
     {
+      "version": "1.4.1",
+      "date": "2026-02-19",
+      "summary": "Fixed Force Refresh causing a Page Not Found error after cache clear",
+      "changes": {
+        "bugFixes": [
+          {
+            "title": "Fixed Force Refresh 404 after service worker clear",
+            "description": "The 'Force Refresh' button in Settings navigated to the current route path (e.g., /Settings?_t=...) after clearing the service worker and all caches. Because the SPA fallback was no longer available, the server returned a 404 for that path. The fix changes the redirect target to window.location.origin + '/?_t=' + Date.now(), which always resolves to index.html regardless of server configuration."
+          }
+        ]
+      }
+    },
+    {
       "version": "1.4.0",
       "date": "2026-02-19",
       "summary": "Fund top-up system, fund addition history, and inline medicine editing",

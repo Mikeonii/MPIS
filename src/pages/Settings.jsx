@@ -179,7 +179,7 @@ export default function Settings() {
       // 4. Force a hard reload (bypasses any HTTP cache)
       toast.success('Caches cleared. Reloading...');
       await new Promise(resolve => setTimeout(resolve, 500));
-      window.location.replace(window.location.href.split('#')[0] + '?_t=' + Date.now());
+      window.location.replace(window.location.origin + '/?_t=' + Date.now());
     } catch (error) {
       console.error('[Update] Force update failed:', error);
       setUpdateStatus('error');
