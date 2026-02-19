@@ -16,7 +16,7 @@ import DualCopyPrintWrapper from '@/components/print/DualCopyPrintWrapper';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
+import {
   ArrowLeft,
   Edit,
   Printer,
@@ -27,7 +27,10 @@ import {
   Users,
   HandHeart,
   FileText,
-  Trash2
+  Trash2,
+  Pencil,
+  Check,
+  X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -47,6 +50,8 @@ export default function AccountView() {
   const [printType, setPrintType] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedAssistance, setSelectedAssistance] = useState(null);
+  const [editingMedicinesId, setEditingMedicinesId] = useState(null);
+  const [editingMedicines, setEditingMedicines] = useState([]);
   const { user: authUser } = useAuth();
 
   React.useEffect(() => {
@@ -89,6 +94,20 @@ export default function AccountView() {
     },
     onError: (error) => {
       toast.error(error?.message || 'Failed to delete assistance');
+    },
+  });
+
+  const updateAssistanceMutation = useMutation({
+    mutationFn: ({ id, data }) => Assistance.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assistances', accountId] });
+      queryClient.invalidateQueries({ queryKey: ['sourceOfFunds'] });
+      setEditingMedicinesId(null);
+      setEditingMedicines([]);
+      toast.success('Medicines updated successfully');
+    },
+    onError: (error) => {
+      toast.error(error?.message || 'Failed to update medicines');
     },
   });
 
@@ -138,6 +157,49 @@ export default function AccountView() {
       return;
     }
     deleteAssistanceMutation.mutate(assistance.id);
+  };
+
+  const handleEditMedicines = (assistance) => {
+    setEditingMedicinesId(assistance.id);
+    setEditingMedicines(
+      assistance.medicines.map(med =>
+        typeof med === 'object'
+          ? { name: med.name || '', quantity: med.quantity || '', unit: med.unit || '', price: med.price || '' }
+          : { name: med, quantity: '', unit: '', price: '' }
+      )
+    );
+  };
+
+  const handleSaveMedicines = (assistanceId) => {
+    const medicines = editingMedicines.map(med => ({
+      name: med.name,
+      quantity: med.quantity,
+      unit: med.unit,
+      price: med.price ? parseFloat(med.price) : null,
+    }));
+    const total = medicines.reduce((sum, med) => {
+      if (med.quantity && med.price) {
+        return sum + parseFloat(med.quantity) * med.price;
+      }
+      return sum;
+    }, 0);
+    updateAssistanceMutation.mutate({
+      id: assistanceId,
+      data: { medicines, amount: total > 0 ? total : undefined },
+    });
+  };
+
+  const handleCancelEditMedicines = () => {
+    setEditingMedicinesId(null);
+    setEditingMedicines([]);
+  };
+
+  const updateEditingMedicine = (index, field, value) => {
+    setEditingMedicines(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
   };
 
   const handlePrint = (type, assistance = null) => {
@@ -623,34 +685,136 @@ export default function AccountView() {
                                 "ml-4 px-3 py-2 rounded-lg text-xs",
                                 darkMode ? "bg-gray-800/50" : "bg-blue-50/50"
                               )}>
-                                <span className={cn(
-                                  "font-medium",
-                                  darkMode ? "text-gray-400" : "text-gray-500"
-                                )}>
-                                  Medicines:{' '}
-                                </span>
-                                {assistance.medicines.map((med, mi) => {
-                                  if (typeof med === 'object') {
-                                    const parts = [med.name];
-                                    if (med.quantity) parts.push(`Qty: ${med.quantity}${med.unit ? ` ${med.unit}${parseFloat(med.quantity) > 1 ? 's' : ''}` : ''}`);
-                                    if (med.price) parts.push(`₱${parseFloat(med.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
-                                    if (med.quantity && med.price) {
-                                      const sub = parseFloat(med.quantity) * parseFloat(med.price);
-                                      parts.push(`= ₱${sub.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
-                                    }
-                                    return (
-                                      <span key={mi} className={darkMode ? "text-gray-300" : "text-gray-700"}>
-                                        {mi > 0 && ' | '}
-                                        {parts.join(' - ')}
+                                {editingMedicinesId === assistance.id ? (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className={cn("font-medium", darkMode ? "text-gray-400" : "text-gray-500")}>
+                                        Edit Medicines:
                                       </span>
-                                    );
-                                  }
-                                  return (
-                                    <span key={mi} className={darkMode ? "text-gray-300" : "text-gray-700"}>
-                                      {mi > 0 && ', '}{med}
-                                    </span>
-                                  );
-                                })}
+                                      <div className="flex gap-1">
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-6 px-2 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+                                          onClick={() => handleSaveMedicines(assistance.id)}
+                                          disabled={updateAssistanceMutation.isPending}
+                                        >
+                                          <Check className="w-3 h-3 mr-1" />
+                                          Save
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-6 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
+                                          onClick={handleCancelEditMedicines}
+                                          disabled={updateAssistanceMutation.isPending}
+                                        >
+                                          <X className="w-3 h-3 mr-1" />
+                                          Cancel
+                                        </Button>
+                                      </div>
+                                    </div>
+                                    {editingMedicines.map((med, mi) => (
+                                      <div key={mi} className={cn(
+                                        "flex flex-wrap items-center gap-2 p-2 rounded-md",
+                                        darkMode ? "bg-gray-700/50" : "bg-white/80"
+                                      )}>
+                                        <div className="flex-1 min-w-[140px]">
+                                          <label className={cn("text-[10px] block mb-0.5", darkMode ? "text-gray-400" : "text-gray-500")}>Name</label>
+                                          <input
+                                            type="text"
+                                            value={med.name}
+                                            onChange={e => updateEditingMedicine(mi, 'name', e.target.value)}
+                                            className={cn(
+                                              "w-full px-2 py-1 text-xs rounded border outline-none focus:ring-1",
+                                              darkMode
+                                                ? "bg-gray-800 border-gray-600 text-white focus:ring-blue-500"
+                                                : "bg-white border-gray-300 text-gray-900 focus:ring-blue-500"
+                                            )}
+                                          />
+                                        </div>
+                                        <div className="w-16">
+                                          <label className={cn("text-[10px] block mb-0.5", darkMode ? "text-gray-400" : "text-gray-500")}>Qty</label>
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            value={med.quantity}
+                                            onChange={e => updateEditingMedicine(mi, 'quantity', e.target.value)}
+                                            className={cn(
+                                              "w-full px-2 py-1 text-xs rounded border outline-none focus:ring-1",
+                                              darkMode
+                                                ? "bg-gray-800 border-gray-600 text-white focus:ring-blue-500"
+                                                : "bg-white border-gray-300 text-gray-900 focus:ring-blue-500"
+                                            )}
+                                          />
+                                        </div>
+                                        <div className="w-24">
+                                          <label className={cn("text-[10px] block mb-0.5", darkMode ? "text-gray-400" : "text-gray-500")}>Price (₱)</label>
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            value={med.price}
+                                            onChange={e => updateEditingMedicine(mi, 'price', e.target.value)}
+                                            className={cn(
+                                              "w-full px-2 py-1 text-xs rounded border outline-none focus:ring-1",
+                                              darkMode
+                                                ? "bg-gray-800 border-gray-600 text-white focus:ring-blue-500"
+                                                : "bg-white border-gray-300 text-gray-900 focus:ring-blue-500"
+                                            )}
+                                          />
+                                        </div>
+                                        {med.quantity && med.price && (
+                                          <div className={cn("text-xs font-medium pt-3", darkMode ? "text-gray-300" : "text-gray-700")}>
+                                            = ₱{(parseFloat(med.quantity) * parseFloat(med.price)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                      <span className={cn("font-medium", darkMode ? "text-gray-400" : "text-gray-500")}>
+                                        Medicines:{' '}
+                                      </span>
+                                      {assistance.medicines.map((med, mi) => {
+                                        if (typeof med === 'object') {
+                                          const parts = [med.name];
+                                          if (med.quantity) parts.push(`Qty: ${med.quantity}${med.unit ? ` ${med.unit}${parseFloat(med.quantity) > 1 ? 's' : ''}` : ''}`);
+                                          if (med.price) parts.push(`₱${parseFloat(med.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                                          if (med.quantity && med.price) {
+                                            const sub = parseFloat(med.quantity) * parseFloat(med.price);
+                                            parts.push(`= ₱${sub.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                                          }
+                                          return (
+                                            <span key={mi} className={darkMode ? "text-gray-300" : "text-gray-700"}>
+                                              {mi > 0 && ' | '}
+                                              {parts.join(' - ')}
+                                            </span>
+                                          );
+                                        }
+                                        return (
+                                          <span key={mi} className={darkMode ? "text-gray-300" : "text-gray-700"}>
+                                            {mi > 0 && ', '}{med}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className={cn(
+                                        "h-5 w-5 p-0 shrink-0",
+                                        darkMode ? "text-gray-400 hover:text-white hover:bg-gray-700" : "text-gray-400 hover:text-gray-700 hover:bg-gray-200"
+                                      )}
+                                      onClick={() => handleEditMedicines(assistance)}
+                                      title="Edit medicines"
+                                    >
+                                      <Pencil className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
                             </td>
                           </tr>

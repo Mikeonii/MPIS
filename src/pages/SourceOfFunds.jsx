@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { SourceOfFunds as SourceOfFundsEntity } from '@/api/entities';
+import client from '@/api/client';
+import { useAuth } from '@/lib/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/components/ui/LanguageContext';
 import { useTheme } from '@/components/ui/ThemeContext';
@@ -9,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, DollarSign, TrendingDown, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, DollarSign, TrendingDown, Calendar, PlusCircle, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import {
@@ -33,6 +35,7 @@ import {
 export default function SourceOfFunds() {
   const { darkMode, currentTheme } = useTheme();
   const { t } = useLanguage();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFund, setEditingFund] = useState(null);
@@ -45,9 +48,28 @@ export default function SourceOfFunds() {
     status: 'Active'
   });
 
+  // Add Funds state
+  const [addFundsDialogOpen, setAddFundsDialogOpen] = useState(false);
+  const [addFundsTarget, setAddFundsTarget] = useState(null);
+  const [addFundsData, setAddFundsData] = useState({
+    amount: '',
+    date: new Date().toISOString().split('T')[0],
+    remarks: '',
+  });
+
+  // History state
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [historyTarget, setHistoryTarget] = useState(null);
+
   const { data: funds = [], isLoading } = useQuery({
     queryKey: ['sourceOfFunds'],
     queryFn: () => SourceOfFundsEntity.list('-date'),
+  });
+
+  const { data: fundAdditions = [], isLoading: isLoadingHistory } = useQuery({
+    queryKey: ['fundAdditions', historyTarget?.id],
+    queryFn: () => client.get(`/source-of-funds/${historyTarget.id}/fund-additions`),
+    enabled: !!historyTarget,
   });
 
   const createMutation = useMutation({
@@ -83,6 +105,19 @@ export default function SourceOfFunds() {
     },
     onError: () => {
       toast.error('Failed to delete source of funds');
+    }
+  });
+
+  const addFundsMutation = useMutation({
+    mutationFn: ({ id, data }) => client.post(`/source-of-funds/${id}/add-funds`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['sourceOfFunds']);
+      queryClient.invalidateQueries(['fundAdditions', addFundsTarget?.id]);
+      toast.success('Funds added successfully');
+      handleCloseAddFunds();
+    },
+    onError: () => {
+      toast.error('Failed to add funds');
     }
   });
 
@@ -125,6 +160,45 @@ export default function SourceOfFunds() {
     });
   };
 
+  const handleOpenAddFunds = (fund) => {
+    setAddFundsTarget(fund);
+    setAddFundsData({
+      amount: '',
+      date: new Date().toISOString().split('T')[0],
+      remarks: '',
+    });
+    setAddFundsDialogOpen(true);
+  };
+
+  const handleCloseAddFunds = () => {
+    setAddFundsDialogOpen(false);
+    setAddFundsTarget(null);
+    setAddFundsData({ amount: '', date: new Date().toISOString().split('T')[0], remarks: '' });
+  };
+
+  const handleAddFundsSubmit = (e) => {
+    e.preventDefault();
+    addFundsMutation.mutate({
+      id: addFundsTarget.id,
+      data: {
+        amount: parseFloat(addFundsData.amount),
+        date: addFundsData.date,
+        remarks: addFundsData.remarks || null,
+        inserted_by: user?.name || 'Unknown',
+      },
+    });
+  };
+
+  const handleOpenHistory = (fund) => {
+    setHistoryTarget(fund);
+    setHistoryDialogOpen(true);
+  };
+
+  const handleCloseHistory = () => {
+    setHistoryDialogOpen(false);
+    setHistoryTarget(null);
+  };
+
   const totalFunded = funds.reduce((sum, f) => sum + (parseFloat(f.amount_funded) || 0), 0);
   const totalRemaining = funds.reduce((sum, f) => sum + (parseFloat(f.amount_remaining) || 0), 0);
   const totalUsed = totalFunded - totalRemaining;
@@ -148,7 +222,7 @@ export default function SourceOfFunds() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button 
+            <Button
               className="text-white shadow-lg"
               style={{ background: `linear-gradient(135deg, ${currentTheme.primary}, ${currentTheme.accent})` }}
             >
@@ -353,7 +427,23 @@ export default function SourceOfFunds() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-center gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Add Funds"
+                            onClick={() => handleOpenAddFunds(fund)}
+                          >
+                            <PlusCircle className="w-4 h-4 text-green-600" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Fund History"
+                            onClick={() => handleOpenHistory(fund)}
+                          >
+                            <History className="w-4 h-4 text-blue-500" />
+                          </Button>
                           <Button
                             size="icon"
                             variant="ghost"
@@ -379,6 +469,7 @@ export default function SourceOfFunds() {
         )}
       </GlassCard>
 
+      {/* Delete Confirmation */}
       <AlertDialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
         <AlertDialogContent className={darkMode ? "bg-gray-900 text-white" : ""}>
           <AlertDialogHeader>
@@ -398,6 +489,113 @@ export default function SourceOfFunds() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Add Funds Dialog */}
+      <Dialog open={addFundsDialogOpen} onOpenChange={setAddFundsDialogOpen}>
+        <DialogContent className={darkMode ? "bg-gray-900 text-white" : ""}>
+          <DialogHeader>
+            <DialogTitle>Add Funds to {addFundsTarget?.source_name}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddFundsSubmit} className="space-y-4">
+            <div>
+              <Label>Amount *</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={addFundsData.amount}
+                onChange={(e) => setAddFundsData({ ...addFundsData, amount: e.target.value })}
+                required
+                placeholder="0.00"
+                className={darkMode ? "bg-gray-800 border-gray-700" : ""}
+              />
+            </div>
+            <div>
+              <Label>Date *</Label>
+              <Input
+                type="date"
+                value={addFundsData.date}
+                onChange={(e) => setAddFundsData({ ...addFundsData, date: e.target.value })}
+                required
+                className={darkMode ? "bg-gray-800 border-gray-700" : ""}
+              />
+            </div>
+            <div>
+              <Label>Remarks</Label>
+              <Textarea
+                value={addFundsData.remarks}
+                onChange={(e) => setAddFundsData({ ...addFundsData, remarks: e.target.value })}
+                className={darkMode ? "bg-gray-800 border-gray-700" : ""}
+                rows={3}
+                placeholder="Optional remarks..."
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={handleCloseAddFunds}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={addFundsMutation.isPending}
+                style={{ backgroundColor: currentTheme.primary }}
+              >
+                {addFundsMutation.isPending ? 'Adding...' : 'Add Funds'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Fund Additions History Dialog */}
+      <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
+        <DialogContent className={cn("max-w-2xl", darkMode ? "bg-gray-900 text-white" : "")}>
+          <DialogHeader>
+            <DialogTitle>Fund Addition History — {historyTarget?.source_name}</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[400px] overflow-y-auto">
+            {isLoadingHistory ? (
+              <p className={cn("text-center py-8", darkMode ? "text-gray-400" : "text-gray-500")}>Loading...</p>
+            ) : fundAdditions.length === 0 ? (
+              <p className={cn("text-center py-8", darkMode ? "text-gray-400" : "text-gray-500")}>No fund additions yet.</p>
+            ) : (
+              <table className="w-full">
+                <thead className={cn(
+                  "border-b sticky top-0",
+                  darkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
+                )}>
+                  <tr>
+                    <th className={cn("px-4 py-2 text-left text-xs font-medium uppercase", darkMode ? "text-gray-400" : "text-gray-500")}>Date</th>
+                    <th className={cn("px-4 py-2 text-right text-xs font-medium uppercase", darkMode ? "text-gray-400" : "text-gray-500")}>Amount</th>
+                    <th className={cn("px-4 py-2 text-left text-xs font-medium uppercase", darkMode ? "text-gray-400" : "text-gray-500")}>Remarks</th>
+                    <th className={cn("px-4 py-2 text-left text-xs font-medium uppercase", darkMode ? "text-gray-400" : "text-gray-500")}>Inserted By</th>
+                  </tr>
+                </thead>
+                <tbody className={cn("divide-y", darkMode ? "divide-gray-700" : "divide-gray-200")}>
+                  {fundAdditions.map((addition) => (
+                    <tr key={addition.id}>
+                      <td className={cn("px-4 py-2 text-sm", darkMode ? "text-gray-300" : "text-gray-700")}>
+                        {new Date(addition.date).toLocaleDateString()}
+                      </td>
+                      <td className={cn("px-4 py-2 text-sm text-right font-medium", darkMode ? "text-green-400" : "text-green-600")}>
+                        +₱{parseFloat(addition.amount).toLocaleString()}
+                      </td>
+                      <td className={cn("px-4 py-2 text-sm", darkMode ? "text-gray-400" : "text-gray-500")}>
+                        {addition.remarks || '—'}
+                      </td>
+                      <td className={cn("px-4 py-2 text-sm", darkMode ? "text-gray-300" : "text-gray-700")}>
+                        {addition.inserted_by}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+          <div className="flex justify-end pt-2">
+            <Button variant="outline" onClick={handleCloseHistory}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

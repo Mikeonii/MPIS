@@ -1,6 +1,41 @@
 {
   "versions": [
     {
+      "version": "1.4.0",
+      "date": "2026-02-19",
+      "summary": "Fund top-up system, fund addition history, and inline medicine editing",
+      "changes": {
+        "features": [
+          {
+            "title": "Add Funds to existing source of funds",
+            "description": "Admins can now top up an existing funding source from the Source of Funds page using a new 'Add Funds' dialog. Each addition records the amount, date, remarks, and the user who inserted it; the fund's amount_funded and amount_remaining are incremented immediately, and a Depleted fund is automatically restored to Active status."
+          },
+          {
+            "title": "Fund addition history per source",
+            "description": "A 'Fund History' button on each source of funds row opens a scrollable dialog listing all past top-up additions with their date, amount, remarks, and the inserting user, providing a full audit trail of fund injections."
+          },
+          {
+            "title": "fund_additions table and API endpoints",
+            "description": "A new fund_additions database table (with a cascade-delete foreign key to source_of_funds) and two API endpoints were added: GET /source-of-funds/{id}/fund-additions to retrieve history and POST /source-of-funds/{id}/add-funds (admin only) to record a new top-up."
+          },
+          {
+            "title": "Inline medicine editing in Assistance History",
+            "description": "Each medicine row in the Assistance History on AccountView now has a pencil icon that activates an inline edit mode, allowing staff to correct medicine name, quantity, and price without opening a separate form. Saving recalculates and updates the assistance amount automatically."
+          }
+        ],
+        "improvements": [
+          {
+            "title": "Bidirectional fund balance adjustment on edit",
+            "description": "Editing an assistance record's amount now adjusts the linked source of funds bidirectionally: increasing the amount deducts the difference, while decreasing it returns the difference. The fund's status also updates between Active and Depleted as the balance crosses zero."
+          },
+          {
+            "title": "Live subtotal preview while editing medicines",
+            "description": "The inline medicine edit form in AccountView shows a real-time computed subtotal (Qty x Price) next to each medicine row as the user types, matching the behaviour already present in AssistanceForm."
+          }
+        ]
+      }
+    },
+    {
       "version": "1.3.0",
       "date": "2026-02-19",
       "summary": "Medicine unit and price tracking added to assistance records",
