@@ -13,10 +13,13 @@ import { ENTITIES, ENTITY_API_PATHS } from './constants';
  * Falls back to regular list endpoints if sync endpoints are not yet available.
  *
  * @param {Function} onProgress - Callback: ({ entity, current, total }) => void
- * @returns {Promise<void>}
+ * @returns {Promise<{ synced: string[], failed: string[], totalRecords: number }>}
  */
 export async function performInitialSync(onProgress) {
   const entityList = Object.values(ENTITIES);
+  const synced = [];
+  const failed = [];
+  let totalRecords = 0;
 
   for (let i = 0; i < entityList.length; i++) {
     const entity = entityList[i];
@@ -66,6 +69,9 @@ export async function performInitialSync(onProgress) {
         full_sync_done: true,
       });
 
+      synced.push(entity);
+      totalRecords += allRecords.length;
+
     } catch (error) {
       console.error(`[InitialSync] Failed for ${entity}:`, error);
 
@@ -86,9 +92,13 @@ export async function performInitialSync(onProgress) {
             record_count: records.length,
             full_sync_done: true,
           });
+
+          synced.push(entity);
+          totalRecords += records.length;
         }
       } catch (fallbackError) {
         console.error(`[InitialSync] Fallback also failed for ${entity}:`, fallbackError);
+        failed.push(entity);
         // Mark as not synced -- will retry next time
         await db._sync_meta.put({
           entity,
@@ -99,4 +109,6 @@ export async function performInitialSync(onProgress) {
       }
     }
   }
+
+  return { synced, failed, totalRecords };
 }

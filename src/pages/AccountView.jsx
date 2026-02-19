@@ -12,20 +12,22 @@ import GeneralIntakeSheet from '@/components/print/GeneralIntakeSheet';
 import ApplicationForm from '@/components/print/ApplicationForm';
 import CertificateOfEligibility from '@/components/print/CertificateOfEligibility';
 import GuaranteeLetter from '@/components/print/GuaranteeLetter';
+import DualCopyPrintWrapper from '@/components/print/DualCopyPrintWrapper';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  ArrowLeft, 
-  Edit, 
-  Printer, 
-  User, 
-  MapPin, 
-  Phone, 
+  ArrowLeft,
+  Edit,
+  Printer,
+  User,
+  MapPin,
+  Phone,
   Calendar,
   Users,
   HandHeart,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -78,6 +80,18 @@ export default function AccountView() {
     },
   });
 
+  const deleteAssistanceMutation = useMutation({
+    mutationFn: (id) => Assistance.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assistances', accountId] });
+      queryClient.invalidateQueries({ queryKey: ['sourceOfFunds'] });
+      toast.success('Assistance deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(error?.message || 'Failed to delete assistance');
+    },
+  });
+
   const calculateAge = (birthdate) => {
     if (!birthdate) return '';
     const today = new Date();
@@ -103,14 +117,27 @@ export default function AccountView() {
       }
 
       queryClient.invalidateQueries({ queryKey: ['sourceOfFunds'] });
-      toast.success('Assistance saved successfully');
+
+      const totalAmount = assistanceData.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
+      const types = [...new Set(assistanceData.map(a => a.type_of_assistance))].join(', ');
+      toast.success('Assistance saved successfully', {
+        description: `${account.last_name}, ${account.first_name} — ${types} (₱${totalAmount.toLocaleString()})`,
+      });
     } catch (error) {
       const errors = error?.data?.errors;
       const message = errors
         ? Object.values(errors).flat().join(', ')
         : error?.message || 'Failed to save assistance';
       toast.error(message);
+      throw error;
     }
+  };
+
+  const handleDeleteAssistance = (assistance) => {
+    if (!window.confirm(`Are you sure you want to delete this assistance record (₱${(assistance.amount || 0).toLocaleString()})? The funds will be returned to the source.`)) {
+      return;
+    }
+    deleteAssistanceMutation.mutate(assistance.id);
   };
 
   const handlePrint = (type, assistance = null) => {
@@ -161,18 +188,22 @@ export default function AccountView() {
             />
           )}
           {printType === 'certificate' && (
-            <CertificateOfEligibility
-              account={account}
-              assistance={selectedAssistance}
-              currentUser={currentUser}
-            />
+            <DualCopyPrintWrapper>
+              <CertificateOfEligibility
+                account={account}
+                assistance={selectedAssistance}
+                currentUser={currentUser}
+              />
+            </DualCopyPrintWrapper>
           )}
           {printType === 'guarantee' && (
-            <GuaranteeLetter
-              account={account}
-              assistance={selectedAssistance}
-              currentUser={currentUser}
-            />
+            <DualCopyPrintWrapper>
+              <GuaranteeLetter
+                account={account}
+                assistance={selectedAssistance}
+                currentUser={currentUser}
+              />
+            </DualCopyPrintWrapper>
           )}
         </div>
       )}
@@ -502,6 +533,7 @@ export default function AccountView() {
                       <th className="pb-3 font-medium">{t('pharmacyName')}</th>
                       <th className="pb-3 font-medium">{t('interviewedBy')}</th>
                       <th className="pb-3 font-medium no-print">Forms</th>
+                      <th className="pb-3 font-medium no-print"></th>
                     </tr>
                   </thead>
                   <tbody className={cn(
@@ -571,11 +603,22 @@ export default function AccountView() {
                               </Button>
                             </div>
                           </td>
+                          <td className="py-3 no-print">
+                            <Button
+                              onClick={() => handleDeleteAssistance(assistance)}
+                              size="sm"
+                              variant="ghost"
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                              disabled={deleteAssistanceMutation.isPending}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </td>
                         </tr>
                         {/* Medicine details row */}
                         {assistance.medicines && Array.isArray(assistance.medicines) && assistance.medicines.length > 0 && (
                           <tr>
-                            <td colSpan={6} className="pb-3 pt-0">
+                            <td colSpan={7} className="pb-3 pt-0">
                               <div className={cn(
                                 "ml-4 px-3 py-2 rounded-lg text-xs",
                                 darkMode ? "bg-gray-800/50" : "bg-blue-50/50"
@@ -616,7 +659,7 @@ export default function AccountView() {
                     ))}
                     {assistances.length === 0 && (
                       <tr>
-                        <td colSpan={6} className={cn(
+                        <td colSpan={7} className={cn(
                           "py-8 text-center",
                           darkMode ? "text-gray-400" : "text-gray-500"
                         )}>

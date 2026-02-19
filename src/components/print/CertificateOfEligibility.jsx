@@ -1,5 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
+import { MADRID_SEAL_BASE64, MP_LOGO_BASE64 } from '@/lib/printLogos';
 
 export default function CertificateOfEligibility({ account, assistance, currentUser }) {
   const getFullName = (data, prefix = '') => {
@@ -27,7 +28,7 @@ export default function CertificateOfEligibility({ account, assistance, currentU
       {/* Header */}
       <div className="flex items-start gap-3 mb-4 pb-3 border-b-2 border-gray-800">
         <img
-          src="/logo.png"
+          src={MADRID_SEAL_BASE64}
           alt="Madrid Seal"
           className="object-contain"
           style={{ width: '60px', height: '60px' }}
@@ -43,7 +44,7 @@ export default function CertificateOfEligibility({ account, assistance, currentU
           <p className="font-semibold mt-1">{format(issueDate, 'MMM d, yyyy')}</p>
         </div>
         <img
-          src="/mp.png"
+          src={MP_LOGO_BASE64}
           alt="Madrid Palamboon Center"
           className="object-contain"
           style={{ width: '60px', height: '60px' }}
@@ -58,8 +59,24 @@ export default function CertificateOfEligibility({ account, assistance, currentU
 
       {/* Content */}
       <div className="space-y-3 text-sm leading-relaxed">
-        <p className="text-justify">
-          This is to certify that <strong className="font-semibold">{getFullName(account)}</strong> of {getFullAddress(account)} has been assessed and found eligible to receive medical assistance in kind from the Madrid Palamboon Center.
+        <p className="text-justify leading-[2.2]">
+          This is to certify that{' '}
+          <span className="inline-block text-center align-top" style={{ minWidth: '180px' }}>
+            <strong className="font-semibold">{
+              account?.rep_same_as_holder || account?.representative_same_as_holder
+                ? getFullName(account)
+                : getFullName(account, 'rep_') || getFullName(account)
+            }</strong>
+            <span className="block border-b border-black"></span>
+            <span className="block text-[8pt] text-gray-500 leading-tight">Client</span>
+          </span>{' '}
+          of {getFullAddress(account)} has been assessed and found eligible to receive medical assistance in kind for{' '}
+          <span className="inline-block text-center align-top" style={{ minWidth: '180px' }}>
+            <strong className="font-semibold">{getFullName(account)}</strong>
+            <span className="block border-b border-black"></span>
+            <span className="block text-[8pt] text-gray-500 leading-tight">Beneficiary</span>
+          </span>{' '}
+          from the Madrid Palamboon Center.
         </p>
 
         <div className="bg-gray-50 p-3 border-l-4 border-gray-800">
@@ -67,7 +84,7 @@ export default function CertificateOfEligibility({ account, assistance, currentU
             <div>
               <p className="text-xs text-gray-600 mb-0.5">Amount Approved</p>
               <p className="font-bold text-lg text-gray-900">₱ {(assistance?.amount || 0).toLocaleString()}</p>
-              <p className="text-xs text-gray-500 mt-0.5">(Maximum ₱5,000)</p>
+              {/* <p className="text-xs text-gray-500 mt-0.5">(Maximum ₱5,000)</p> */}
             </div>
             <div>
               <p className="text-xs text-gray-600 mb-0.5">Assistance Type</p>
@@ -84,14 +101,29 @@ export default function CertificateOfEligibility({ account, assistance, currentU
         </p>
       </div>
 
-      {/* Signature */}
+      {/* Signatures */}
       <div className="mt-6 pt-4 border-t border-gray-300">
         <div className="flex justify-between items-end">
-          <div className="text-xs text-gray-600">
-            <p>Issued by</p>
-          </div>
+          {/* Representative Signature (Left) */}
           <div className="text-center">
-            <div className="border-b-2 border-gray-800 w-64 mb-1"></div>
+            <p className="text-xs text-gray-600 mb-6">Received by</p>
+            <div className="border-b-2 border-gray-800 w-56 mb-1"></div>
+            <p className="font-semibold text-sm">
+              {account?.rep_same_as_holder || account?.representative_same_as_holder
+                ? getFullName(account).toUpperCase()
+                : getFullName(account, 'rep_').toUpperCase() || ''}
+            </p>
+            <p className="text-xs text-gray-600">
+              {account?.rep_same_as_holder || account?.representative_same_as_holder
+                ? 'Beneficiary'
+                : account?.rep_relationship || 'Name & Signature of Client'}
+            </p>
+          </div>
+
+          {/* Authorized Signatory (Right) */}
+          <div className="text-center">
+            <p className="text-xs text-gray-600 mb-6">Issued by</p>
+            <div className="border-b-2 border-gray-800 w-56 mb-1"></div>
             <p className="font-semibold text-sm">{currentUser?.full_name?.toUpperCase() || ''}</p>
             <p className="text-xs text-gray-600">{currentUser?.position || 'Authorized Signatory'}</p>
             <p className="text-xs text-gray-600">Madrid Palamboon Center</p>

@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { useTheme } from '@/components/ui/ThemeContext';
 import { useLanguage } from '@/components/ui/LanguageContext';
+import { useOffline } from '@/lib/OfflineContext';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
+import db from '@/lib/offline/db';
 import GlassCard from '@/components/common/GlassCard';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -20,9 +23,14 @@ import {
   Download,
   CheckCircle2,
   Loader2,
-  Info
+  Info,
+  CloudOff,
+  Cloud,
+  Database,
+  WifiOff
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function Settings() {
   const { darkMode, toggleDarkMode, colorTheme, setColorTheme, themes, currentTheme } = useTheme();
@@ -42,6 +50,51 @@ export default function Settings() {
     confirmPassword: ''
   });
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Offline sync state
+  const { isOnline, isSyncing, pendingMutationCount } = useOffline();
+  const { doSync } = useOfflineSync();
+  const [syncMeta, setSyncMeta] = useState([]);
+  const [isLoadingSyncMeta, setIsLoadingSyncMeta] = useState(true);
+
+  const ENTITY_LABELS = {
+    accounts: 'Accounts',
+    assistances: 'Assistances',
+    family_members: 'Family Members',
+    pharmacies: 'Pharmacies',
+    source_of_funds: 'Source of Funds',
+    users: 'Users',
+  };
+
+  const loadSyncMeta = useCallback(async () => {
+    try {
+      const metas = await db._sync_meta.toArray();
+      setSyncMeta(metas);
+    } catch {
+      setSyncMeta([]);
+    } finally {
+      setIsLoadingSyncMeta(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSyncMeta();
+    const interval = setInterval(loadSyncMeta, 5000);
+    return () => clearInterval(interval);
+  }, [loadSyncMeta]);
+
+  const handleManualSync = async () => {
+    if (!isOnline) {
+      toast.error('Cannot sync while offline');
+      return;
+    }
+    await doSync(true);
+    await loadSyncMeta();
+  };
+
+  const allEntitiesSynced = Object.keys(ENTITY_LABELS).every(entity =>
+    syncMeta.some(m => m.entity === entity && m.full_sync_done === true)
+  );
 
   // App update state
   const [updateStatus, setUpdateStatus] = useState('idle'); // idle | checking | found | not-found | updating | error
@@ -597,6 +650,145 @@ export default function Settings() {
             </Button>
           </div>
         </form>
+      </GlassCard>
+
+      {/* Offline Data */}
+      <GlassCard className="p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: `${currentTheme.primary}20` }}
+          >
+            <Database className="w-5 h-5" style={{ color: currentTheme.primary }} />
+          </div>
+          <div className="flex-1">
+            <h2 className={cn(
+              "text-lg font-semibold",
+              darkMode ? "text-white" : "text-gray-900"
+            )}>
+              Offline Data
+            </h2>
+            <p className={cn(
+              "text-sm",
+              darkMode ? "text-gray-400" : "text-gray-500"
+            )}>
+              Sync data for offline printing and access
+            </p>
+          </div>
+          <div className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium",
+            isOnline
+              ? "bg-green-500/15 text-green-600 dark:text-green-400"
+              : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+          )}>
+            {isOnline ? <Cloud className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
+            {isOnline ? 'Online' : 'Offline'}
+          </div>
+        </div>
+
+        {/* Overall status */}
+        <div className={cn(
+          "rounded-xl p-4 mb-4 border",
+          allEntitiesSynced
+            ? darkMode ? "bg-green-900/20 border-green-700/50" : "bg-green-50 border-green-200"
+            : darkMode ? "bg-amber-900/20 border-amber-700/50" : "bg-amber-50 border-amber-200"
+        )}>
+          <div className="flex items-center gap-2">
+            {allEntitiesSynced ? (
+              <CheckCircle2 className={cn("w-4 h-4", darkMode ? "text-green-400" : "text-green-600")} />
+            ) : (
+              <CloudOff className={cn("w-4 h-4", darkMode ? "text-amber-400" : "text-amber-600")} />
+            )}
+            <p className={cn(
+              "text-sm font-medium",
+              allEntitiesSynced
+                ? darkMode ? "text-green-300" : "text-green-700"
+                : darkMode ? "text-amber-300" : "text-amber-700"
+            )}>
+              {allEntitiesSynced
+                ? 'All data synced. Printing and viewing works offline.'
+                : 'Some data not yet synced. Sync now to enable offline access.'}
+            </p>
+          </div>
+          {pendingMutationCount > 0 && (
+            <p className={cn(
+              "text-xs mt-1.5 ml-6",
+              darkMode ? "text-amber-400" : "text-amber-600"
+            )}>
+              {pendingMutationCount} pending change{pendingMutationCount !== 1 ? 's' : ''} waiting to sync
+            </p>
+          )}
+        </div>
+
+        {/* Per-entity sync status */}
+        <div className={cn(
+          "rounded-xl border divide-y",
+          darkMode ? "border-gray-700/50 divide-gray-700/50" : "border-gray-200 divide-gray-100"
+        )}>
+          {Object.entries(ENTITY_LABELS).map(([entity, label]) => {
+            const meta = syncMeta.find(m => m.entity === entity);
+            const isSyncDone = meta?.full_sync_done === true;
+            return (
+              <div key={entity} className="flex items-center justify-between px-4 py-2.5">
+                <span className={cn(
+                  "text-sm",
+                  darkMode ? "text-gray-300" : "text-gray-700"
+                )}>
+                  {label}
+                </span>
+                <div className="flex items-center gap-2">
+                  {isSyncDone ? (
+                    <>
+                      <span className={cn("text-xs", darkMode ? "text-gray-500" : "text-gray-400")}>
+                        {meta.record_count} records
+                        {meta.last_sync_at && (
+                          <> &middot; {formatDistanceToNow(new Date(meta.last_sync_at), { addSuffix: true })}</>
+                        )}
+                      </span>
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    </>
+                  ) : (
+                    <>
+                      <span className={cn("text-xs", darkMode ? "text-gray-500" : "text-gray-400")}>
+                        Not synced
+                      </span>
+                      <CloudOff className="w-4 h-4 text-amber-500" />
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Sync button */}
+        <div className="mt-4 flex justify-end">
+          <Button
+            onClick={handleManualSync}
+            disabled={isSyncing || !isOnline}
+            className="rounded-xl text-white gap-2"
+            style={{ backgroundColor: currentTheme.primary }}
+          >
+            {isSyncing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Syncing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4" />
+                Sync Now
+              </>
+            )}
+          </Button>
+        </div>
+
+        <p className={cn(
+          "text-xs mt-3",
+          darkMode ? "text-gray-500" : "text-gray-400"
+        )}>
+          Data syncs automatically on login and when reconnecting. Use "Sync Now" to manually update before going to the field.
+        </p>
       </GlassCard>
 
       {/* App Update */}

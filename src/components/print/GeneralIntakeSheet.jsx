@@ -1,5 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
+import { MADRID_SEAL_BASE64, MP_LOGO_BASE64 } from '@/lib/printLogos';
 
 export default function GeneralIntakeSheet({ account, familyMembers = [], assistances = [], currentUser }) {
   const calculateAge = (birthdate) => {
@@ -41,7 +42,7 @@ export default function GeneralIntakeSheet({ account, familyMembers = [], assist
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <img
-            src="/logo.png"
+            src={MADRID_SEAL_BASE64}
             alt="Madrid Seal"
             className="w-16 h-16 rounded-full object-cover"
           />
@@ -52,7 +53,7 @@ export default function GeneralIntakeSheet({ account, familyMembers = [], assist
           </div>
         </div>
         <img
-          src="/mp.png"
+          src={MP_LOGO_BASE64}
           alt="Madrid Palamboon Center"
           className="w-16 h-16 object-contain"
         />

@@ -21,7 +21,7 @@ import { clearIdMappings } from './idMapper';
  * @param {Object} options
  * @param {Function} options.onProgress - ({ entity, current, total }) => void
  * @param {Function} options.onConflicts - (conflicts) => void
- * @param {Function} options.onComplete - ({ synced, conflicts, errors }) => void
+ * @param {Function} options.onComplete - ({ synced, conflicts, errors, initialSyncResult }) => void
  * @param {Function} options.onError - (error) => void
  * @param {boolean} options.isInitial - Whether this is the first sync after login
  */
@@ -35,10 +35,11 @@ export async function runSync({
   try {
     // Step 0: Check if we should do initial sync
     const needsInitialSync = isInitial || !(await isInitialSyncComplete());
+    let initialSyncResult = null;
 
     if (needsInitialSync) {
       onProgress?.({ entity: 'initial', current: 0, total: 6 });
-      await performInitialSync(onProgress);
+      initialSyncResult = await performInitialSync(onProgress);
     }
 
     // Step 1: Verify device lock (optional -- if lock mechanism is active)
@@ -73,6 +74,7 @@ export async function runSync({
       synced: mutationResults.synced,
       conflicts: mutationResults.conflicts,
       errors: mutationResults.errors,
+      initialSyncResult,
     });
 
     return {
@@ -80,6 +82,7 @@ export async function runSync({
       synced: mutationResults.synced,
       conflicts: mutationResults.conflicts.length + conflicts.length,
       errors: mutationResults.errors.length,
+      initialSyncResult,
     };
 
   } catch (error) {

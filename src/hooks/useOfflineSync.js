@@ -49,7 +49,24 @@ export function useOfflineSync() {
             });
           }
         },
-        onComplete: ({ synced, errors }) => {
+        onComplete: ({ synced, errors, initialSyncResult }) => {
+          // Show initial sync result
+          if (initialSyncResult) {
+            const { synced: syncedEntities, failed, totalRecords } = initialSyncResult;
+            if (failed.length === 0) {
+              toast.success('Offline data ready', {
+                description: `${totalRecords} records synced across ${syncedEntities.length} categories.`,
+                duration: 4000,
+              });
+            } else {
+              toast.warning('Partial sync completed', {
+                description: `${syncedEntities.length} synced, ${failed.length} failed: ${failed.join(', ')}`,
+                duration: 6000,
+              });
+            }
+          }
+
+          // Show mutation replay results
           if (synced > 0) {
             toast.success(`Synced ${synced} change${synced !== 1 ? 's' : ''}`);
           }

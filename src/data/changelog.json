@@ -1,0 +1,262 @@
+{
+  "versions": [
+    {
+      "version": "1.3.0",
+      "date": "2026-02-19",
+      "summary": "Medicine unit and price tracking added to assistance records",
+      "changes": {
+        "features": [
+          {
+            "title": "Medicine unit and price per assistance",
+            "description": "Medicines in assistance records now capture unit (e.g., tablet, capsule, vial) and price per unit, enabling automatic subtotal and grand total calculations. A 'Use as Amount' button fills the assistance amount from the computed medicine total."
+          },
+          {
+            "title": "Medicine totals on Guarantee Letter",
+            "description": "The Guarantee Letter print form now includes a medicines table with Qty, Unit, Price, and Subtotal columns plus a Grand Total row, giving pharmacies a complete itemized breakdown."
+          },
+          {
+            "title": "Medicine filter in Flexible Reports",
+            "description": "Flexible Reports can now filter assistance records by a specific medicine name, and display medicine details including quantity, unit, and price per item in the results table and print output."
+          }
+        ],
+        "improvements": [
+          {
+            "title": "Medicines display in Assistance History",
+            "description": "The Assistance History table on AccountView now shows a medicine detail sub-row beneath each record with name, quantity, unit, price, and computed subtotal for structured medicine objects."
+          },
+          {
+            "title": "Legacy medicine format backward compatibility",
+            "description": "All medicine display code handles both the new structured object format { name, quantity, unit, price } and the legacy plain-string format, preventing display errors on older records."
+          },
+          {
+            "title": "Certificate of Eligibility medicine section removed",
+            "description": "Medicines were intentionally removed from the Certificate of Eligibility print form to keep it concise; medicine detail is now exclusively in the Guarantee Letter."
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.2.0",
+      "date": "2026-02-19",
+      "summary": "Offline-first PWA with full sync engine and conflict resolution",
+      "changes": {
+        "features": [
+          {
+            "title": "Progressive Web App with offline support",
+            "description": "MPIS is now installable as a PWA via vite-plugin-pwa. A service worker caches the application shell so the UI loads without internet connectivity."
+          },
+          {
+            "title": "Dexie offline database",
+            "description": "All six data entities (accounts, assistances, family members, pharmacies, source of funds, users) are stored locally in IndexedDB via Dexie, enabling read access and data entry while offline."
+          },
+          {
+            "title": "Offline mutation queue",
+            "description": "Creates, updates, and deletes made while offline are queued in a local mutation log and automatically replayed against the server once connectivity is restored."
+          },
+          {
+            "title": "Initial and incremental sync engine",
+            "description": "On first login the app performs a full download of all entities. Subsequent syncs are incremental, pulling only records changed since the last sync timestamp to minimize data transfer."
+          },
+          {
+            "title": "Sync conflict resolution dialog",
+            "description": "When the sync engine detects that a record was modified on the server while the user was editing it offline, a conflict dialog shows a side-by-side diff of local vs. server values and lets the user choose which version to keep."
+          },
+          {
+            "title": "Device lock mechanism",
+            "description": "An advisory device lock prevents multiple devices from submitting conflicting offline mutations simultaneously; the lock is acquired before sync and released after completion."
+          },
+          {
+            "title": "Offline banner and network toast",
+            "description": "An OfflineBanner in the header and a NetworkToast notification inform users of connectivity state changes in real time."
+          },
+          {
+            "title": "Sync status indicator in sidebar",
+            "description": "The sidebar footer displays a live sync status indicator showing whether the last sync succeeded, is in progress, or has pending offline mutations."
+          },
+          {
+            "title": "Offline data management in Settings",
+            "description": "The Settings page shows per-entity sync status (record count and last sync time), a manual 'Sync Now' button, and guidance on enabling offline access before going to the field."
+          },
+          {
+            "title": "ID mapping for offline-created records",
+            "description": "Offline-created records use negative temporary IDs. When synced, the server returns real IDs and an ID mapper updates all local references to keep data consistent."
+          }
+        ],
+        "improvements": [
+          {
+            "title": "App update flow in Settings",
+            "description": "Settings now includes an App Update panel with Check for Updates, Update Now, and Force Refresh controls that unregister the service worker, clear all caches, and hard-reload to apply the latest build."
+          },
+          {
+            "title": "Version and build time display",
+            "description": "Settings shows the current app version (__APP_VERSION__) and build timestamp (__BUILD_TIME__) injected at build time via Vite's define config."
+          },
+          {
+            "title": "Offline data cleared on logout",
+            "description": "All local IndexedDB tables are wiped on logout so that a subsequent login on the same device starts with a fresh sync, preventing stale data exposure."
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.1.0",
+      "date": "2026-02-19",
+      "summary": "Print forms, dual-copy layout, and reporting pages added",
+      "changes": {
+        "features": [
+          {
+            "title": "General Intake Sheet print form",
+            "description": "AccountView can print a General Intake Sheet for any account, displaying full personal, address, family, and assistance history data in a formatted A4 layout with the dual-logo header (Madrid Seal + MP logo)."
+          },
+          {
+            "title": "Application Form print",
+            "description": "A printable Application Form is available from AccountView, formatted for official municipal use with beneficiary details and representative information."
+          },
+          {
+            "title": "Certificate of Eligibility print",
+            "description": "Each assistance record in AccountView can generate a Certificate of Eligibility, printed in dual-copy mode (two forms per A4 page) with the authorized signatory's name and position."
+          },
+          {
+            "title": "Guarantee Letter print",
+            "description": "Each assistance record can also generate a Guarantee Letter addressed to the authorized pharmacy, showing the approved amount, validity period (issued date + 3 days), medicines table, and terms and conditions."
+          },
+          {
+            "title": "Dual-copy print wrapper",
+            "description": "The DualCopyPrintWrapper component renders two identical copies of a form on one A4 sheet separated by a cut line, halving paper usage for Certificates of Eligibility and Guarantee Letters."
+          },
+          {
+            "title": "Flexible Reports page",
+            "description": "Admins can filter all assistance records by type, medical subcategory, medicine, barangay, date range, source of funds, target sector, and sub-category. Results include totals and a printable summary report."
+          },
+          {
+            "title": "Barangay Reports page",
+            "description": "A dedicated Barangay Reports page ranks all 25 barangays by total assistance value, with expandable rows listing individual accounts and their assistance counts. Fully printable to PDF."
+          },
+          {
+            "title": "Dual-logo header on all print forms",
+            "description": "All print forms use base64-embedded logos (Madrid Seal on the left, MP logo on the right) so they render correctly offline without network requests for image assets."
+          },
+          {
+            "title": "Print CSS for A4 layout",
+            "description": "Global @media print CSS in Layout.jsx hides non-print elements, sets A4 page dimensions, and applies compressed spacing for dual-copy form sections to fit two copies per page."
+          }
+        ],
+        "improvements": [
+          {
+            "title": "Assistance delete with fund restoration",
+            "description": "Deleting an assistance record from AccountView triggers a confirmation prompt, and the backend automatically restores the deleted amount back to the source of funds' amount_remaining."
+          },
+          {
+            "title": "Assistance total displayed in history",
+            "description": "The Assistance History tab on AccountView now shows a running total of all assistance amounts in the top-right corner of the history card."
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.0.0",
+      "date": "2026-02-19",
+      "summary": "Initial release — full MPIS application with core modules",
+      "changes": {
+        "features": [
+          {
+            "title": "Authentication with Laravel Sanctum",
+            "description": "Token-based login via Sanctum stores a Bearer token in localStorage. Unauthorized responses auto-clear the token and redirect to the login page. Users can change their own password from Settings."
+          },
+          {
+            "title": "Role-based access control (admin and user)",
+            "description": "Two roles exist: admin (full access to all modules) and user (Dashboard and Accounts only). Navigation items are filtered per role in the sidebar, and the backend enforces admin-only routes with middleware."
+          },
+          {
+            "title": "Dashboard with statistics and charts",
+            "description": "The Dashboard shows four stat cards (total accounts, total assistance value, total pharmacies, assisted this month), a bar chart of accounts by barangay, a donut chart of assistance by type, and a recent assistance table."
+          },
+          {
+            "title": "Accounts management (CRUD)",
+            "description": "Admins and users can create, view, edit, and delete beneficiary accounts. Each account stores 49 fields including personal info, full address, contact details, target sector, sub-categories, and representative information."
+          },
+          {
+            "title": "Account list with search and filters",
+            "description": "The Accounts page provides a searchable, paginated table with filters by barangay (all 25 Madrid barangays) and target sector (FHONA, WEDC, YOUTH, PWD, SC, PLHIV, CHILD)."
+          },
+          {
+            "title": "AccountView with tabbed profile, family, and assistance",
+            "description": "Viewing an account shows three tabs: Profile (personal, address, contact, representative info), Family (family composition table with income totals), and Assistance (assistance form + history)."
+          },
+          {
+            "title": "Assistance recording per account",
+            "description": "The AssistanceForm allows recording multiple assistance entries per session with type, medical subcategory, medicines, pharmacy, date, amount, source of funds, and interviewer fields."
+          },
+          {
+            "title": "Family member management",
+            "description": "Family members can be added to an account with name, relationship, age, occupation, and monthly income. Batch creation uses a transactional endpoint; deleting an account cascades to remove all family members."
+          },
+          {
+            "title": "Pharmacies management (admin CUD)",
+            "description": "Admins can create, edit, and delete registered pharmacies. All roles can view the pharmacy list, which is used to populate the pharmacy picker in assistance records."
+          },
+          {
+            "title": "Source of Funds management (admin CUD)",
+            "description": "Admins can create and manage funding sources with name, amount funded, date, status (Active/Inactive/Depleted), and remarks. Creating an assistance deducts the amount from the selected fund's amount_remaining and auto-sets status to Depleted when exhausted."
+          },
+          {
+            "title": "User management (admin only)",
+            "description": "Admins can invite users by email, edit their full name, position, and role, reset passwords, and delete users. Deleting your own account is blocked on both frontend and backend."
+          },
+          {
+            "title": "Global search with keyboard shortcut",
+            "description": "A global search dialog (Cmd+K / Ctrl+K) searches across accounts and family members by name or barangay, showing inline assistance counts and navigating directly to the AccountView on selection."
+          },
+          {
+            "title": "Settings page",
+            "description": "Users can update their profile (full name, position, username, assistance period), change their password, select a UI theme, language, and color scheme, and manage offline data sync from a single Settings page."
+          },
+          {
+            "title": "Dark mode and light mode",
+            "description": "A ThemeContext provides dark/light mode toggling persisted to localStorage. The gradient background, sidebar, cards, and all UI components adapt to the selected mode."
+          },
+          {
+            "title": "Six selectable color themes",
+            "description": "Six color themes (e.g., blue, purple, green, orange) are available from the sidebar palette picker or Settings. The active theme color drives navigation highlights, stat card icons, badges, and buttons via CSS variables."
+          },
+          {
+            "title": "Bilingual English and Cebuano UI",
+            "description": "A LanguageContext provides full English and Cebuano translations for all labels, navigation items, and form fields, persisted to localStorage. Language can be toggled from the sidebar or Settings."
+          },
+          {
+            "title": "Animated page transitions",
+            "description": "Framer Motion powers fade/slide transitions between routes via AnimatePresence and PageTransition, giving the app a polished feel while the sidebar layout remains statically mounted."
+          },
+          {
+            "title": "Glass morphism design system",
+            "description": "The GlassCard component and backdrop-blur sidebar create a consistent glass morphism aesthetic using Tailwind CSS, semi-transparent backgrounds, and Shadcn/ui Radix primitives."
+          },
+          {
+            "title": "Mobile-responsive sidebar and header",
+            "description": "On mobile, the sidebar collapses behind an overlay triggered by a hamburger button in the sticky header. Desktop shows the sidebar persistently at lg:pl-72."
+          },
+          {
+            "title": "Laravel 12 REST API backend",
+            "description": "A Laravel 12 API powers all data operations with six controllers (Auth, Account, Assistance, FamilyMember, Pharmacy, SourceOfFunds) and a SyncController for offline sync endpoints."
+          },
+          {
+            "title": "React Query for data fetching and caching",
+            "description": "All API calls go through TanStack React Query, providing automatic caching, background refetching, and cache invalidation after mutations so lists stay up to date without manual refreshes."
+          },
+          {
+            "title": "Assistance grace period enforcement",
+            "description": "The AssistanceForm checks whether the account received assistance within the configurable grace period (default 90 days, set per user in Settings) and warns or blocks submission accordingly."
+          },
+          {
+            "title": "Last name duplicate warning",
+            "description": "The AccountForm checks for existing accounts with the same last name and barangay, displaying a LastNameWarning component to help staff avoid creating duplicate records."
+          },
+          {
+            "title": "Page not found and user not registered error screens",
+            "description": "A PageNotFound component handles unknown routes, and a UserNotRegisteredError component displays when an authenticated user's profile cannot be loaded from the API."
+          }
+        ]
+      }
+    }
+  ]
+}

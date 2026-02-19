@@ -66,11 +66,126 @@ function LayoutContent({ children, currentPageName }) {
         .font-sf {
           font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
         }
+        @page {
+          size: A4 portrait;
+          margin: 5mm 8mm;
+        }
+
         @media print {
           .no-print { display: none !important; }
           .print-only { display: block !important; }
+
+          /* Dual-copy print layout: two forms on one A4 page */
+          body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          .dual-copy-print-wrapper {
+            display: block !important;
+            width: 100%;
+            max-width: 194mm; /* A4 width minus margins */
+            margin: 0 auto;
+            page-break-inside: avoid;
+          }
+
+          .dual-copy-form-section {
+            height: 136mm; /* ~half of A4 minus separator and margins */
+            overflow: hidden;
+            box-sizing: border-box;
+          }
+
+          .dual-copy-form-section .print-content {
+            padding: 3mm 4mm !important;
+            max-width: 100% !important;
+            min-height: unset !important;
+            font-size: 8pt !important;
+          }
+
+          .dual-copy-form-section .print-content .text-lg {
+            font-size: 11pt !important;
+          }
+
+          .dual-copy-form-section .print-content .text-xl {
+            font-size: 12pt !important;
+          }
+
+          .dual-copy-form-section .print-content .text-sm {
+            font-size: 8pt !important;
+          }
+
+          .dual-copy-form-section .print-content .text-xs {
+            font-size: 6.5pt !important;
+          }
+
+          .dual-copy-form-section .print-content img {
+            width: 45px !important;
+            height: 45px !important;
+          }
+
+          .dual-copy-form-section .print-content .mb-4 {
+            margin-bottom: 0.35rem !important;
+          }
+
+          .dual-copy-form-section .print-content .mb-3 {
+            margin-bottom: 0.25rem !important;
+          }
+
+          .dual-copy-form-section .print-content .pb-3 {
+            padding-bottom: 0.25rem !important;
+          }
+
+          .dual-copy-form-section .print-content .mt-4 {
+            margin-top: 0.35rem !important;
+          }
+
+          .dual-copy-form-section .print-content .mt-6 {
+            margin-top: 0.5rem !important;
+          }
+
+          .dual-copy-form-section .print-content .pt-4 {
+            padding-top: 0.25rem !important;
+          }
+
+          .dual-copy-form-section .print-content .pt-3 {
+            padding-top: 0.2rem !important;
+          }
+
+          .dual-copy-form-section .print-content .p-3 {
+            padding: 0.2rem 0.4rem !important;
+          }
+
+          .dual-copy-form-section .print-content .p-2 {
+            padding: 0.15rem 0.35rem !important;
+          }
+
+          .dual-copy-form-section .print-content .gap-3 {
+            gap: 0.4rem !important;
+          }
+
+          .dual-copy-form-section .print-content .space-y-3 > * + * {
+            margin-top: 0.25rem !important;
+          }
+
+          .dual-copy-form-section .print-content .space-y-0\\.5 > * + * {
+            margin-top: 0.05rem !important;
+          }
+
+          .dual-copy-form-section .print-content .w-56 {
+            width: 10rem !important;
+          }
+
+          .dual-copy-form-section .print-content .w-64 {
+            width: 12rem !important;
+          }
+
+          .dual-copy-separator {
+            margin: 0 !important;
+            padding: 1mm 0 !important;
+          }
         }
         .print-only { display: none; }
+        .dual-copy-print-wrapper { display: none; }
       `}</style>
 
       {/* Mobile Sidebar Overlay */}

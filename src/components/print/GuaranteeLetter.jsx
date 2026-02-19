@@ -1,5 +1,6 @@
 import React from 'react';
 import { format, addDays } from 'date-fns';
+import { MADRID_SEAL_BASE64, MP_LOGO_BASE64 } from '@/lib/printLogos';
 
 export default function GuaranteeLetter({ account, assistance, currentUser }) {
   const getFullName = (data, prefix = '') => {
@@ -28,7 +29,7 @@ export default function GuaranteeLetter({ account, assistance, currentUser }) {
       {/* Header */}
       <div className="flex items-start gap-3 mb-4 pb-3 border-b-2 border-gray-800">
         <img
-          src="/logo.png"
+          src={MADRID_SEAL_BASE64}
           alt="Madrid Seal"
           className="object-contain"
           style={{ width: '60px', height: '60px' }}
@@ -44,7 +45,7 @@ export default function GuaranteeLetter({ account, assistance, currentUser }) {
           <p className="font-semibold mt-1">{assistance?.gl_number || 'MP-GL-____'}</p>
         </div>
         <img
-          src="/mp.png"
+          src={MP_LOGO_BASE64}
           alt="Madrid Palamboon Center"
           className="object-contain"
           style={{ width: '60px', height: '60px' }}

@@ -267,7 +267,7 @@ export default function AssistanceForm({
     });
   };
 
-  const handleSubmit = (bypassCheck = false) => {
+  const handleSubmit = async (bypassCheck = false) => {
     if (!bypassCheck && !canAddAssistance) {
       setShowIneligibilityDialog(true);
       return;
@@ -309,7 +309,29 @@ export default function AssistanceForm({
       }
     }
 
-    onSave(localAssistances);
+    try {
+      await onSave(localAssistances);
+      // Reset form after successful save
+      setLocalAssistances([{
+        type_of_assistance: '',
+        medical_subcategory: '',
+        medicines: [],
+        interviewed_by: user?.full_name || user?.email || '',
+        interviewed_by_position: user?.position || '',
+        amount: '',
+        pharmacy_id: '',
+        pharmacy_name: '',
+        source_of_funds_id: '',
+        source_of_funds_name: '',
+        date_rendered: new Date().toISOString().split('T')[0]
+      }]);
+      setMedicineInput({});
+      setMedicineQuantity({});
+      setMedicineUnit({});
+      setMedicinePrice({});
+    } catch (error) {
+      // Error already handled by parent via toast
+    }
   };
 
   const inputClasses = cn(
