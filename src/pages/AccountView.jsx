@@ -147,11 +147,13 @@ export default function AccountView() {
 
       queryClient.invalidateQueries({ queryKey: ['sourceOfFunds'] });
 
-      const totalAmount = assistanceData.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
+      const nonLogistics = assistanceData.filter(a => a.type_of_assistance !== 'Logistics');
+      const totalAmount = nonLogistics.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
       const types = [...new Set(assistanceData.map(a => a.type_of_assistance))].join(', ');
-      toast.success('Assistance saved successfully', {
-        description: `${account.last_name}, ${account.first_name} — ${types} (₱${totalAmount.toLocaleString()})`,
-      });
+      const description = nonLogistics.length > 0
+        ? `${account.last_name}, ${account.first_name} — ${types} (₱${totalAmount.toLocaleString()})`
+        : `${account.last_name}, ${account.first_name} — ${types}`;
+      toast.success('Assistance saved successfully', { description });
     } catch (error) {
       const errors = error?.data?.errors;
       const message = errors
@@ -163,7 +165,11 @@ export default function AccountView() {
   };
 
   const handleDeleteAssistance = (assistance) => {
-    if (!window.confirm(`Are you sure you want to delete this assistance record (₱${(assistance.amount || 0).toLocaleString()})? The funds will be returned to the source.`)) {
+    const isLogistics = assistance.type_of_assistance === 'Logistics';
+    const message = isLogistics
+      ? 'Are you sure you want to delete this logistics assistance record?'
+      : `Are you sure you want to delete this assistance record (₱${(assistance.amount || 0).toLocaleString()})? The funds will be returned to the source.`;
+    if (!window.confirm(message)) {
       return;
     }
     deleteAssistanceMutation.mutate(assistance.id);
@@ -644,12 +650,23 @@ export default function AccountView() {
                             >
                               {assistance.type_of_assistance}
                             </span>
+                            {assistance.logistics_subcategory && (
+                              <span className={cn(
+                                "text-xs ml-1",
+                                darkMode ? "text-gray-400" : "text-gray-500"
+                              )}>
+                                — {assistance.logistics_subcategory}
+                              </span>
+                            )}
                           </td>
                           <td className={cn(
                             "py-3 text-right font-semibold",
                             darkMode ? "text-white" : "text-gray-900"
                           )}>
-                            ₱{(assistance.amount || 0).toLocaleString()}
+                            {assistance.type_of_assistance === 'Logistics'
+                              ? <span className={cn("text-xs font-normal", darkMode ? "text-gray-400" : "text-gray-500")}>N/A</span>
+                              : `₱${(assistance.amount || 0).toLocaleString()}`
+                            }
                           </td>
                           <td className={cn(
                             "py-3",

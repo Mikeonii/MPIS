@@ -29,13 +29,14 @@ export default function AssistanceForm({
   const [ineligibilityReason, setIneligibilityReason] = useState(null);
   const [showIneligibilityDialog, setShowIneligibilityDialog] = useState(false);
 
-  const [localAssistances, setLocalAssistances] = useState([{ 
-    type_of_assistance: '', 
+  const [localAssistances, setLocalAssistances] = useState([{
+    type_of_assistance: '',
     medical_subcategory: '',
+    logistics_subcategory: '',
     medicines: [],
-    interviewed_by: '', 
+    interviewed_by: '',
     interviewed_by_position: '',
-    amount: '', 
+    amount: '',
     pharmacy_id: '',
     pharmacy_name: '',
     source_of_funds_id: '',
@@ -178,14 +179,15 @@ export default function AssistanceForm({
 
   const addAssistance = () => {
     setLocalAssistances(prev => [
-      ...prev, 
-      { 
+      ...prev,
+      {
         type_of_assistance: '',
         medical_subcategory: '',
+        logistics_subcategory: '',
         medicines: [],
-        interviewed_by: user?.full_name || user?.email || '', 
+        interviewed_by: user?.full_name || user?.email || '',
         interviewed_by_position: user?.position || '',
-        amount: '', 
+        amount: '',
         pharmacy_id: '',
         pharmacy_name: '',
         source_of_funds_id: '',
@@ -250,7 +252,28 @@ export default function AssistanceForm({
     setLocalAssistances(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
-      
+
+      // When type changes, reset type-specific fields
+      if (field === 'type_of_assistance') {
+        if (value === 'Logistics') {
+          updated[index].amount = '';
+          updated[index].source_of_funds_id = '';
+          updated[index].source_of_funds_name = '';
+          updated[index].medical_subcategory = '';
+          updated[index].medicines = [];
+          updated[index].pharmacy_id = '';
+          updated[index].pharmacy_name = '';
+        } else {
+          updated[index].logistics_subcategory = '';
+        }
+        if (value !== 'Medical') {
+          updated[index].medical_subcategory = '';
+          updated[index].medicines = [];
+          updated[index].pharmacy_id = '';
+          updated[index].pharmacy_name = '';
+        }
+      }
+
       // If pharmacy_id changes, update pharmacy_name
       if (field === 'pharmacy_id') {
         const pharmacy = pharmacies.find(p => String(p.id) === String(value));
@@ -262,7 +285,7 @@ export default function AssistanceForm({
         const source = fundsources.find(s => String(s.id) === String(value));
         updated[index].source_of_funds_name = source?.source_name || '';
       }
-      
+
       return updated;
     });
   };
@@ -278,10 +301,14 @@ export default function AssistanceForm({
       const a = localAssistances[i];
       const label = localAssistances.length > 1 ? ` (Assistance #${i + 1})` : '';
       const missing = [];
+      const isLogistics = a.type_of_assistance === 'Logistics';
 
       if (!a.type_of_assistance) missing.push('Type of Assistance');
-      if (!a.amount || parseFloat(a.amount) <= 0) missing.push('Amount');
-      if (!a.source_of_funds_id) missing.push('Source of Funds');
+      if (!isLogistics) {
+        if (!a.amount || parseFloat(a.amount) <= 0) missing.push('Amount');
+        if (!a.source_of_funds_id) missing.push('Source of Funds');
+      }
+      if (isLogistics && !a.logistics_subcategory) missing.push('Logistics Subcategory');
       if (!a.date_rendered) missing.push('Date Rendered');
 
       if (missing.length > 0) {
@@ -290,9 +317,11 @@ export default function AssistanceForm({
       }
     }
 
-    // Validate available funds
+    // Validate available funds (skip for logistics)
     for (let i = 0; i < localAssistances.length; i++) {
       const assistance = localAssistances[i];
+      if (assistance.type_of_assistance === 'Logistics') continue;
+
       const label = localAssistances.length > 1 ? ` (Assistance #${i + 1})` : '';
       const source = fundsources.find(s => String(s.id) === String(assistance.source_of_funds_id));
       if (!source) {
@@ -315,6 +344,7 @@ export default function AssistanceForm({
       setLocalAssistances([{
         type_of_assistance: '',
         medical_subcategory: '',
+        logistics_subcategory: '',
         medicines: [],
         interviewed_by: user?.full_name || user?.email || '',
         interviewed_by_position: user?.position || '',
@@ -464,8 +494,8 @@ export default function AssistanceForm({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label className={labelClasses}>{t('typeOfAssistance')} *</Label>
-                <Select 
-                  value={assistance.type_of_assistance} 
+                <Select
+                  value={assistance.type_of_assistance}
                   onValueChange={(v) => updateAssistance(index, 'type_of_assistance', v)}
                 >
                   <SelectTrigger className={inputClasses}>
@@ -482,18 +512,20 @@ export default function AssistanceForm({
                   </SelectContent>
                 </Select>
               </div>
-              
-              <div>
-                <Label className={labelClasses}>{t('amount')} *</Label>
-                <Input
-                  type="number"
-                  value={assistance.amount}
-                  onChange={(e) => updateAssistance(index, 'amount', e.target.value)}
-                  className={inputClasses}
-                  placeholder="₱"
-                />
-              </div>
-              
+
+              {assistance.type_of_assistance !== 'Logistics' && (
+                <div>
+                  <Label className={labelClasses}>{t('amount')} *</Label>
+                  <Input
+                    type="number"
+                    value={assistance.amount}
+                    onChange={(e) => updateAssistance(index, 'amount', e.target.value)}
+                    className={inputClasses}
+                    placeholder="₱"
+                  />
+                </div>
+              )}
+
               <div>
                 <Label className={labelClasses}>{t('dateRendered')}</Label>
                 <Input
@@ -504,6 +536,27 @@ export default function AssistanceForm({
                 />
               </div>
             </div>
+
+            {assistance.type_of_assistance === 'Logistics' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <Label className={labelClasses}>Logistics Subcategory *</Label>
+                  <Select
+                    value={assistance.logistics_subcategory}
+                    onValueChange={(v) => updateAssistance(index, 'logistics_subcategory', v)}
+                  >
+                    <SelectTrigger className={inputClasses}>
+                      <SelectValue placeholder="Select Subcategory" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Ambulance">Ambulance</SelectItem>
+                      <SelectItem value="Service Request">Service Request</SelectItem>
+                      <SelectItem value="Service for Surigao Doctors">Service for Surigao Doctors</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
 
             {assistance.type_of_assistance === 'Medical' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -737,7 +790,7 @@ export default function AssistanceForm({
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div className={cn("grid grid-cols-1 gap-4 mt-4", assistance.type_of_assistance !== 'Logistics' ? "md:grid-cols-2" : "")}>
               <div>
                 <Label className={labelClasses}>{t('interviewedBy')}</Label>
                 <Input
@@ -746,25 +799,27 @@ export default function AssistanceForm({
                   className={inputClasses}
                 />
               </div>
-              
-              <div>
-                <Label className={labelClasses}>Source of Funds *</Label>
-                <Select 
-                  value={assistance.source_of_funds_id} 
-                  onValueChange={(v) => updateAssistance(index, 'source_of_funds_id', v)}
-                >
-                  <SelectTrigger className={inputClasses}>
-                    <SelectValue placeholder="Select Source of Funds" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fundsources.map(source => (
-                      <SelectItem key={source.id} value={String(source.id)}>
-                        {source.source_name} - ₱{source.amount_remaining.toLocaleString()} available
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+
+              {assistance.type_of_assistance !== 'Logistics' && (
+                <div>
+                  <Label className={labelClasses}>Source of Funds *</Label>
+                  <Select
+                    value={assistance.source_of_funds_id}
+                    onValueChange={(v) => updateAssistance(index, 'source_of_funds_id', v)}
+                  >
+                    <SelectTrigger className={inputClasses}>
+                      <SelectValue placeholder="Select Source of Funds" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {fundsources.map(source => (
+                        <SelectItem key={source.id} value={String(source.id)}>
+                          {source.source_name} - ₱{source.amount_remaining.toLocaleString()} available
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           </div>
         ))}

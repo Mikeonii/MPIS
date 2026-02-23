@@ -14,6 +14,7 @@ import { createPageUrl } from '@/utils';
 
 const ASSISTANCE_TYPES = ['Medical', 'Funeral', 'Cash Assistance', 'Logistics', 'TUPAD', 'AICS', 'GIP'];
 const MEDICAL_SUBCATEGORIES = ['Medicines', 'Hospital Bill', 'Laboratories'];
+const LOGISTICS_SUBCATEGORIES = ['Ambulance', 'Service Request', 'Service for Surigao Doctors'];
 const TARGET_SECTORS = ['FHONA', 'WEDC', 'YOUTH', 'PWD', 'SC', 'PLHIV', 'CHILD'];
 
 export default function FlexibleReports() {
@@ -22,6 +23,7 @@ export default function FlexibleReports() {
   const [filters, setFilters] = useState({
     assistanceType: '',
     medicalSubcategory: '',
+    logisticsSubcategory: '',
     medicine: '',
     barangay: '',
     dateFrom: '',
@@ -93,6 +95,10 @@ export default function FlexibleReports() {
       results = results.filter(r => r.medical_subcategory === filters.medicalSubcategory);
     }
 
+    if (filters.logisticsSubcategory) {
+      results = results.filter(r => r.logistics_subcategory === filters.logisticsSubcategory);
+    }
+
     if (filters.medicine) {
       results = results.filter(r =>
         r.medicines && Array.isArray(r.medicines) && r.medicines.some(m =>
@@ -139,6 +145,7 @@ export default function FlexibleReports() {
     setFilters({
       assistanceType: '',
       medicalSubcategory: '',
+      logisticsSubcategory: '',
       medicine: '',
       barangay: '',
       dateFrom: '',
@@ -204,6 +211,7 @@ export default function FlexibleReports() {
             <strong>Active Filters:</strong>{' '}
             {filters.assistanceType && `Type: ${filters.assistanceType}`}
             {filters.medicalSubcategory && `, Subcategory: ${filters.medicalSubcategory}`}
+            {filters.logisticsSubcategory && `, Logistics: ${filters.logisticsSubcategory}`}
             {filters.medicine && `, Medicine: ${filters.medicine}`}
             {filters.barangay && `, Barangay: ${filters.barangay}`}
             {filters.dateFrom && `, From: ${new Date(filters.dateFrom).toLocaleDateString()}`}
@@ -249,7 +257,7 @@ export default function FlexibleReports() {
                 <td>{result.account?.barangay || 'N/A'}</td>
                 <td>{result.type_of_assistance}</td>
                 <td>
-                  {result.medical_subcategory || '-'}
+                  {result.logistics_subcategory || result.medical_subcategory || '-'}
                   {result.medicines && result.medicines.length > 0 && (
                     <div style={{ fontSize: '8pt', color: '#666', marginTop: '2px' }}>
                       {result.medicines.map(m =>
@@ -347,6 +355,23 @@ export default function FlexibleReports() {
                 <SelectContent>
                   <SelectItem value={null}>All Subcategories</SelectItem>
                   {MEDICAL_SUBCATEGORIES.map(sub => (
+                    <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {filters.assistanceType === 'Logistics' && (
+            <div>
+              <Label className={labelClasses}>Logistics Subcategory</Label>
+              <Select value={filters.logisticsSubcategory} onValueChange={(v) => setFilters({...filters, logisticsSubcategory: v})}>
+                <SelectTrigger className={inputClasses}>
+                  <SelectValue placeholder="All Subcategories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>All Subcategories</SelectItem>
+                  {LOGISTICS_SUBCATEGORIES.map(sub => (
                     <SelectItem key={sub} value={sub}>{sub}</SelectItem>
                   ))}
                 </SelectContent>
@@ -550,7 +575,7 @@ export default function FlexibleReports() {
                       {result.type_of_assistance}
                     </td>
                     <td className={cn("p-4 text-sm", darkMode ? "text-gray-300" : "text-gray-600")}>
-                      {result.medical_subcategory || '-'}
+                      {result.logistics_subcategory || result.medical_subcategory || '-'}
                       {result.medicines && result.medicines.length > 0 && (
                         <div className="text-xs mt-1">
                           {result.medicines.map(m =>
