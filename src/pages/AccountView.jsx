@@ -13,9 +13,16 @@ import ApplicationForm from '@/components/print/ApplicationForm';
 import CertificateOfEligibility from '@/components/print/CertificateOfEligibility';
 import GuaranteeLetter from '@/components/print/GuaranteeLetter';
 import DualCopyPrintWrapper from '@/components/print/DualCopyPrintWrapper';
+import FullPageDualPrintWrapper from '@/components/print/FullPageDualPrintWrapper';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   ArrowLeft,
   Edit,
@@ -30,7 +37,9 @@ import {
   Trash2,
   Pencil,
   Check,
-  X
+  X,
+  Columns2,
+  BookCopy
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -48,6 +57,7 @@ export default function AccountView() {
 
   const [activeTab, setActiveTab] = useState(tabParam || 'profile');
   const [printType, setPrintType] = useState(null);
+  const [printLayout, setPrintLayout] = useState('split'); // 'split' = 1 page, 'full' = 2 pages
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedAssistance, setSelectedAssistance] = useState(null);
   const [editingMedicinesId, setEditingMedicinesId] = useState(null);
@@ -202,9 +212,10 @@ export default function AccountView() {
     });
   };
 
-  const handlePrint = (type, assistance = null) => {
+  const handlePrint = (type, assistance = null, layout = 'split') => {
     setPrintType(type);
     setSelectedAssistance(assistance);
+    setPrintLayout(layout);
     setTimeout(() => {
       window.print();
       setPrintType(null);
@@ -258,7 +269,7 @@ export default function AccountView() {
               />
             </DualCopyPrintWrapper>
           )}
-          {printType === 'guarantee' && (
+          {printType === 'guarantee' && printLayout === 'split' && (
             <DualCopyPrintWrapper>
               <GuaranteeLetter
                 account={account}
@@ -266,6 +277,15 @@ export default function AccountView() {
                 currentUser={currentUser}
               />
             </DualCopyPrintWrapper>
+          )}
+          {printType === 'guarantee' && printLayout === 'full' && (
+            <FullPageDualPrintWrapper>
+              <GuaranteeLetter
+                account={account}
+                assistance={selectedAssistance}
+                currentUser={currentUser}
+              />
+            </FullPageDualPrintWrapper>
           )}
         </div>
       )}
@@ -654,15 +674,34 @@ export default function AccountView() {
                                 <FileText className="w-3 h-3 mr-1" />
                                 Certificate
                               </Button>
-                              <Button
-                                onClick={() => handlePrint('guarantee', assistance)}
-                                size="sm"
-                                variant="outline"
-                                className="text-xs"
-                              >
-                                <FileText className="w-3 h-3 mr-1" />
-                                GL
-                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-xs"
+                                  >
+                                    <FileText className="w-3 h-3 mr-1" />
+                                    GL
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-52">
+                                  <DropdownMenuItem onClick={() => handlePrint('guarantee', assistance, 'split')}>
+                                    <Columns2 className="w-4 h-4 mr-2" />
+                                    <div>
+                                      <p className="text-xs font-medium">1 Page (Split)</p>
+                                      <p className="text-[10px] text-muted-foreground">Original + Photocopy on 1 page</p>
+                                    </div>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handlePrint('guarantee', assistance, 'full')}>
+                                    <BookCopy className="w-4 h-4 mr-2" />
+                                    <div>
+                                      <p className="text-xs font-medium">2 Pages (Full)</p>
+                                      <p className="text-[10px] text-muted-foreground">1 page each for Original & Photocopy</p>
+                                    </div>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </td>
                           <td className="py-3 no-print">

@@ -183,9 +183,33 @@ function LayoutContent({ children, currentPageName }) {
             margin: 0 !important;
             padding: 1mm 0 !important;
           }
+
+          /* Full-page dual print: each copy on its own page */
+          .full-page-dual-wrapper {
+            display: block !important;
+            width: 100%;
+            max-width: 194mm;
+            margin: 0 auto;
+          }
+
+          .full-page-section {
+            page-break-after: always;
+            box-sizing: border-box;
+          }
+
+          .full-page-section:last-child {
+            page-break-after: auto;
+          }
+
+          .full-page-section .print-content {
+            padding: 4mm 6mm !important;
+            max-width: 100% !important;
+            min-height: unset !important;
+          }
         }
         .print-only { display: none; }
         .dual-copy-print-wrapper { display: none; }
+        .full-page-dual-wrapper { display: none; }
       `}</style>
 
       {/* Mobile Sidebar Overlay */}
