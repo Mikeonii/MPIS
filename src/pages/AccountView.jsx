@@ -39,7 +39,8 @@ import {
   Check,
   X,
   Columns2,
-  BookCopy
+  BookCopy,
+  Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -62,6 +63,7 @@ export default function AccountView() {
   const [selectedAssistance, setSelectedAssistance] = useState(null);
   const [editingMedicinesId, setEditingMedicinesId] = useState(null);
   const [editingMedicines, setEditingMedicines] = useState([]);
+  const [editingAssistance, setEditingAssistance] = useState(null);
   const { user: authUser } = useAuth();
 
   React.useEffect(() => {
@@ -114,6 +116,7 @@ export default function AccountView() {
       queryClient.invalidateQueries({ queryKey: ['sourceOfFunds'] });
       setEditingMedicinesId(null);
       setEditingMedicines([]);
+      setEditingAssistance(null);
       toast.success('Medicines updated successfully');
     },
     onError: (error) => {
@@ -177,37 +180,50 @@ export default function AccountView() {
 
   const handleEditMedicines = (assistance) => {
     setEditingMedicinesId(assistance.id);
+    setEditingAssistance(assistance);
     setEditingMedicines(
       assistance.medicines.map(med =>
         typeof med === 'object'
-          ? { name: med.name || '', quantity: med.quantity || '', unit: med.unit || '', price: med.price || '' }
+          ? { name: med.name || '', quantity: med.quantity || '', unit: med.unit || '', price: med.price != null ? med.price : '' }
           : { name: med, quantity: '', unit: '', price: '' }
       )
     );
   };
 
   const handleSaveMedicines = (assistanceId) => {
-    const medicines = editingMedicines.map(med => ({
-      name: med.name,
-      quantity: med.quantity,
-      unit: med.unit,
-      price: med.price ? parseFloat(med.price) : null,
-    }));
+    const medicines = editingMedicines
+      .filter(med => med.name && med.name.trim() !== '')
+      .map(med => ({
+        name: med.name,
+        quantity: med.quantity,
+        unit: med.unit,
+        price: med.price !== '' && med.price != null ? parseFloat(med.price) : null,
+      }));
     const total = medicines.reduce((sum, med) => {
-      if (med.quantity && med.price) {
+      if (med.quantity && med.price != null) {
         return sum + parseFloat(med.quantity) * med.price;
       }
       return sum;
     }, 0);
+    // Always send amount so fund balance is adjusted when total changes
     updateAssistanceMutation.mutate({
       id: assistanceId,
-      data: { medicines, amount: total > 0 ? total : undefined },
+      data: { medicines, amount: total },
     });
   };
 
   const handleCancelEditMedicines = () => {
     setEditingMedicinesId(null);
     setEditingMedicines([]);
+    setEditingAssistance(null);
+  };
+
+  const addEditingMedicine = () => {
+    setEditingMedicines(prev => [...prev, { name: '', quantity: '', unit: '', price: '' }]);
+  };
+
+  const removeEditingMedicine = (index) => {
+    setEditingMedicines(prev => prev.filter((_, i) => i !== index));
   };
 
   const updateEditingMedicine = (index, field, value) => {
@@ -820,13 +836,66 @@ export default function AccountView() {
                                             )}
                                           />
                                         </div>
-                                        {med.quantity && med.price && (
+                                        {med.quantity && med.price !== '' && med.price != null && (
                                           <div className={cn("text-xs font-medium pt-3", darkMode ? "text-gray-300" : "text-gray-700")}>
                                             = ₱{(parseFloat(med.quantity) * parseFloat(med.price)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                           </div>
                                         )}
+                                        {editingMedicines.length > 1 && (
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-6 w-6 p-0 text-red-400 hover:text-red-600 hover:bg-red-50 pt-3 shrink-0"
+                                            onClick={() => removeEditingMedicine(mi)}
+                                            title="Remove medicine"
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </Button>
+                                        )}
                                       </div>
                                     ))}
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className={cn(
+                                        "h-6 px-2 text-xs mt-1",
+                                        darkMode ? "text-gray-400 hover:text-white hover:bg-gray-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+                                      )}
+                                      onClick={addEditingMedicine}
+                                    >
+                                      <Plus className="w-3 h-3 mr-1" />
+                                      Add Medicine
+                                    </Button>
+                                    {/* Total preview with fund impact */}
+                                    {(() => {
+                                      const newTotal = editingMedicines.reduce((sum, med) => {
+                                        if (med.quantity && med.price !== '' && med.price != null) {
+                                          return sum + parseFloat(med.quantity) * parseFloat(med.price);
+                                        }
+                                        return sum;
+                                      }, 0);
+                                      const oldAmount = parseFloat(editingAssistance?.amount) || 0;
+                                      const difference = newTotal - oldAmount;
+                                      return (
+                                        <div className={cn(
+                                          "mt-2 pt-2 border-t flex flex-wrap items-center gap-3",
+                                          darkMode ? "border-gray-600" : "border-gray-300"
+                                        )}>
+                                          <span className={cn("text-xs", darkMode ? "text-gray-400" : "text-gray-500")}>
+                                            Previous: ₱{oldAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                          </span>
+                                          <span className="text-xs font-semibold" style={{ color: currentTheme.primary }}>
+                                            New: ₱{newTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                          </span>
+                                          {difference !== 0 && (
+                                            <span className={cn("text-xs font-medium", difference > 0 ? "text-red-500" : "text-green-500")}>
+                                              ({difference > 0 ? '+' : ''}₱{difference.toLocaleString(undefined, { minimumFractionDigits: 2 })})
+                                              {difference > 0 ? ' deducted from fund' : ' returned to fund'}
+                                            </span>
+                                          )}
+                                        </div>
+                                      );
+                                    })()}
                                   </div>
                                 ) : (
                                   <div className="flex items-start justify-between gap-2">
